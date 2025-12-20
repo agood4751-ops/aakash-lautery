@@ -1,0 +1,81 @@
+<div class="row">
+  <div class="col-md-6 mx-auto">
+    <div class="card bg-secondary shadow-lg border-warning border-2">
+      <div class="card-body p-4">
+        <h2 class="mb-3 text-warning text-center">Number Game</h2>
+
+        <% if (!draw) { %>
+          <p class="text-center text-light">
+            No active draw at the moment. Please check back later.
+          </p>
+        <% } else { %>
+
+          <p class="text-light small text-center mb-3">
+            Next draw at:
+            <strong><%= new Date(draw.draw_time).toLocaleString() %></strong>
+          </p>
+
+          <form action="/play/number" method="POST" id="numberGameForm">
+
+            <input type="hidden" name="draw_id" value="<%= draw.id %>">
+            <input type="hidden" id="ticketsSold" value="<%= draw.tickets_sold %>">
+            <input type="hidden" id="userTickets" value="<%= typeof userTickets !== 'undefined' ? userTickets : 0 %>">
+
+
+            <!-- Number -->
+            <div class="mb-3">
+              <label class="form-label">Choose a number (1–100)</label>
+              <input type="number" min="1" max="100" name="chosen_number" class="form-control" required>
+            </div>
+
+            <!-- Tickets -->
+            <div class="mb-3">
+              <label class="form-label">Number of Tickets (Max 5)</label>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                name="tickets"
+                id="tickets"
+                class="form-control"
+                required
+              >
+              <small id="ticketError" class="text-danger d-none">
+                Maximum 5 tickets per user. Only 80 tickets allowed per draw.
+              </small>
+            </div>
+
+            <!-- Amount -->
+            <div class="mb-3">
+              <label class="form-label">Bet Amount (₹1 – ₹100)</label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                name="amount"
+                id="amount"
+                class="form-control"
+                required
+              >
+            </div>
+
+            <!-- Prize -->
+            <p class="text-light small">
+              Prize Amount:
+              <strong>₹<span id="prizeAmount">0</span></strong>
+            </p>
+
+            <button class="btn btn-warning w-100">
+              Place Bet
+            </button>
+
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/public/js/main.js"></script>

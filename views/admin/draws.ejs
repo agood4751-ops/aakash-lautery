@@ -1,0 +1,134 @@
+<h2 class="mb-3">Draws</h2>
+
+<div class="card bg-secondary mb-4">
+  <div class="card-body">
+    <h5>Create New Draw</h5>
+
+    <form action="/admin/draws" method="POST" class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label">Game</label>
+        <select name="game_type_code" class="form-select" required>
+          <option value="NUMBER">Number Game (1–100)</option>
+          <option value="NUMBER50">Number Game (1–50)</option>
+          <option value="COLOR">Color Game</option>
+        </select>
+      </div>
+
+      <div class="col-md-5">
+        <label class="form-label">Draw Time</label>
+        <input type="datetime-local" name="draw_time" class="form-control" required />
+      </div>
+
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-warning w-100">
+          Create
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<table class="table table-dark table-striped align-middle">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Game</th>
+      <th>Draw Time</th>
+      <th>Status</th>
+      <th>Result</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% draws.forEach(d => { %>
+      <tr>
+        <td><%= d.id %></td>
+
+        <td>
+          <%= d.game_name %>
+          (<%= d.code %>)
+        </td>
+
+        <td>
+          <%= new Date(d.draw_time).toLocaleString() %>
+        </td>
+
+        <td>
+          <%= d.is_closed ? 'Closed' : 'Open' %>
+        </td>
+
+        <!-- RESULT -->
+        <td>
+          <% if (d.is_closed) { %>
+            <% if (d.code === 'NUMBER' || d.code === 'NUMBER50') { %>
+              Number:
+              <strong><%= d.winning_number %></strong>
+            <% } else { %>
+              Color:
+              <strong><%= d.winning_color %></strong>
+            <% } %>
+          <% } else { %>
+            -
+          <% } %>
+        </td>
+
+        <!-- ACTION -->
+        <td>
+          <% if (!d.is_closed) { %>
+
+            <form
+              action="/admin/draws/<%= d.id %>/close"
+              method="POST"
+              class="d-flex gap-2"
+            >
+
+              <% if (d.code === 'NUMBER') { %>
+                <input
+                  type="number"
+                  name="winning_number"
+                  min="1"
+                  max="100"
+                  class="form-control form-control-sm"
+                  placeholder="1–100"
+                  required
+                />
+
+              <% } else if (d.code === 'NUMBER50') { %>
+                <input
+                  type="number"
+                  name="winning_number"
+                  min="1"
+                  max="50"
+                  class="form-control form-control-sm"
+                  placeholder="1–50"
+                  required
+                />
+
+              <% } else { %>
+                <select
+                  name="winning_color"
+                  class="form-select form-select-sm"
+                  required
+                >
+                  <option value="">Select Color</option>
+                  <option value="RED">RED</option>
+                  <option value="GREEN">GREEN</option>
+                  <option value="BLUE">BLUE</option>
+                  <option value="YELLOW">YELLOW</option>
+                </select>
+              <% } %>
+
+              <button class="btn btn-sm btn-success">
+                Declare
+              </button>
+            </form>
+
+          <% } else { %>
+            <span class="text-muted">Completed</span>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

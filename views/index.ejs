@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title || 'Galaxy Lottery' %> | Galaxy Lottery</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    /* Small helpers for visual polish */
+    .hero {
+      min-height: 50vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.7));
+    }
+    .game-card { transition: transform .15s ease, box-shadow .15s ease; }
+    .game-card:hover { transform: translateY(-6px); box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+    .badge-players { font-size: .8rem; }
+  </style>
+</head>
+<body class="bg-dark text-light">
+
+  <!-- HERO + Carousel -->
+  <header class="hero text-center text-white py-5">
+    <div class="container">
+      <h1 class="display-4 fw-bold text-warning mb-3">Welcome to Galaxy Lottery</h1>
+      <p class="lead text-secondary mb-4">Play our Number & Color games. Simple rules, instant excitement.</p>
+      <div class="d-flex justify-content-center gap-2">
+        <% if (!currentUser) { %>
+          <a href="/register" class="btn btn-warning btn-lg">Get Started</a>
+          <a href="/login" class="btn btn-outline-light btn-lg">Login</a>
+        <% } else { %>
+          <a href="/play/number" class="btn btn-warning btn-lg">Play Number Game</a>
+          <a href="/play/color" class="btn btn-outline-info btn-lg">Play Color Game</a>
+        <% } %>
+      </div>
+
+      <!-- Carousel (in hero) -->
+      <div id="promoCarousel" class="carousel slide mt-5" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+          <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner rounded-3 overflow-hidden shadow-lg">
+          <div class="carousel-item active">
+            <div class="carousel-caption d-none d-md-block text-start">
+              <h5 class="text-warning">Number Game — Pick & Win</h5>
+              <p class="text-light">Choose your lucky numbers and see instant results.</p>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <div class="carousel-caption d-none d-md-block text-start">
+              <h5 class="text-warning">Color Game — Simple & Fast</h5>
+              <p class="text-light">Pick a color, place a bet, and wait for the live draw.</p>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <div class="carousel-caption d-none d-md-block text-start">
+              <h5 class="text-warning">Daily Prizes & Jackpots</h5>
+              <p class="text-light">Multiple daily draws give you more chances to win.</p>
+            </div>
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#promoCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#promoCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- GAMES GRID -->
+  <section class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="h3 text-warning">Games</h2>
+      <small class="text-muted">Choose a game to begin</small>
+    </div>
+
+    <div class="row g-4">
+      <!-- Number Game Card -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card game-card h-100 bg-secondary border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="card-title text-warning">Number Game</h5>
+                <p class="card-text text-light small">Pick 1-3 numbers and win based on the draw. Fast results.</p>
+              </div>
+              <span class="badge bg-dark text-light badge-players"><i class="bi bi-people-fill"></i> 2.1k players</span>
+            </div>
+
+            <ul class="list-unstyled text-muted small mb-3">
+              <li>• Quick rounds (every 10 minutes)</li>
+              <li>• Choose 1-3 numbers</li>
+              <li>• Instant payout</li>
+            </ul>
+
+            <div class="d-flex gap-2">
+              <a href="/play/number" class="btn btn-warning flex-grow-1">Start Game</a>
+              <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal"
+                data-title="Number Game Rules" data-body="Choose 1-3 numbers. Ticket cost varies by numbers chosen. Matching numbers win prizes calculated from the pool. Rounds finish every 10 minutes.">View Rules</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Number 50 Game Card -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card game-card h-100 bg-secondary border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="card-title text-warning">Number 50 Game</h5>
+                <p class="card-text text-light small">Pick 1-50 numbers and win based on the draw. Fast results.</p>
+              </div>
+              <span class="badge bg-dark text-light badge-players"><i class="bi bi-people-fill"></i> 2.1k players</span>
+            </div>
+
+            <ul class="list-unstyled text-muted small mb-3">
+              <li>• Quick rounds (every 2 hours)</li>
+              <li>• Choose 1-50 numbers</li>
+              <li>• Instant payout</li>
+            </ul>
+
+            <div class="d-flex gap-2">
+              <a href="/play/numberGame2" class="btn btn-warning flex-grow-1">Start Game</a>
+              <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal"
+                data-title="Number Game Rules" data-body="Choose 1-3 numbers. Ticket cost varies by numbers chosen. Matching numbers win prizes calculated from the pool. Rounds finish every 10 minutes.">View Rules</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color Game Card -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card game-card h-100 bg-secondary border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="card-title text-warning">Color Game</h5>
+                <p class="card-text text-light small">Pick a color and win if the draw lands on it. Super simple.</p>
+              </div>
+              <span class="badge bg-dark text-light badge-players">1.8k players</span>
+            </div>
+
+            <ul class="list-unstyled text-muted small mb-3">
+              <li>• Choose one color per ticket</li>
+              <li>• Draws every 5 minutes</li>
+              <li>• Instant settle</li>
+            </ul>
+
+            <div class="d-flex gap-2">
+              <a href="/play/color" class="btn btn-warning flex-grow-1">Start Game</a>
+              <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal"
+                data-title="Color Game Rules" data-body="Pick a color (Red/Green/Blue/Yellow). Bets are placed before the draw. If the drawn color matches your pick you win according to the odds displayed.">View Rules</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Bet Card -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card game-card h-100 bg-secondary border-0">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="card-title text-warning">Quick Bet</h5>
+                <p class="card-text text-light small">Fast bet option for both games. Use presets to place bets instantly.</p>
+              </div>
+              <span class="badge bg-dark text-light badge-players">420</span>
+            </div>
+
+            <p class="small text-muted mb-3">Preset bets, one-click play, ideal for repeat players.</p>
+
+            <div class="d-flex gap-2">
+              <a href="/play/quick" class="btn btn-warning flex-grow-1">Start Game</a>
+              <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal"
+                data-title="Quick Bet Rules" data-body="Quick bets use saved presets. Make sure you have sufficient balance. Presets can be managed in your profile.">View Rules</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming/Promotions Card -->
+      <div class="col-12">
+        <div class="card bg-secondary border-0 p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <h5 class="mb-0 text-warning">Upcoming Draws & Promotions</h5>
+              <small class="text-muted">Happy hours and increased jackpots this week.</small>
+            </div>
+            <a href="/promotions" class="btn btn-outline-light">View Promotions</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rules Modal (single modal that is reused) -->
+  <div class="modal fade" id="rulesModal" tabindex="-1" aria-labelledby="rulesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-dark text-light border-0">
+        <div class="modal-header border-0">
+          <h5 class="modal-title text-warning" id="rulesModalLabel">Rules</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="rulesModalBody">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <a href="#" id="rulesStartBtn" class="btn btn-warning">Start Game</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <!-- Bootstrap bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // When a rules button opens the modal, populate it from data- attributes
+    const rulesModal = document.getElementById('rulesModal');
+    rulesModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget; // Button that triggered the modal
+      const title = button.getAttribute('data-title') || 'Rules';
+      const body = button.getAttribute('data-body') || '';
+      const startHref = button.getAttribute('data-start') || '#';
+
+      document.getElementById('rulesModalLabel').innerText = title;
+      document.getElementById('rulesModalBody').innerHTML = '<p class="small text-muted">' + body + '</p>';
+      document.getElementById('rulesStartBtn').setAttribute('href', startHref);
+    });
+
+    // Optional: add tiny animation for cards when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.game-card').forEach((c, i) => {
+        c.style.transitionDelay = (i * 50) + 'ms';
+      });
+    });
+  </script>
+</body>
+</html>

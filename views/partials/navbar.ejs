@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-warning">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-warning" href="/">Galaxy Lottery</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div id="nav" class="collapse navbar-collapse">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <% if (currentUser) { %>
+          <li class="nav-item"><a href="/play/number" class="nav-link">Number Game</a></li>
+          <li class="nav-item"><a href="/play/color" class="nav-link">Color Game</a></li>
+          <li class="nav-item"><a href="/play/myBets" class="nav-link">My Bets</a></li>
+          <% if (currentUser.is_admin) { %>
+            <li class="nav-item"><a href="/admin" class="nav-link text-warning">Admin</a></li>
+          <% } %>
+        <% } %>
+      </ul>
+
+      <ul class="navbar-nav ms-auto">
+        <% if (!currentUser) { %>
+          <li class="nav-item"><a href="/login" class="nav-link">Login</a></li>
+          <li class="nav-item"><a href="/register" class="nav-link">Register</a></li>
+        <% } else { %>
+          <li class="nav-item">
+            <span class="nav-link">
+              Balance: <span class="text-success fw-semibold">₹ <%= currentUser.balance %></span>
+            </span>
+          </li>
+          <li class="nav-item">
+            <form action="/logout" method="POST">
+              <button class="btn btn-sm btn-outline-light">Logout</button>
+            </form>
+          </li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+</nav>

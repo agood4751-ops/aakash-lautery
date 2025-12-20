@@ -1,0 +1,24 @@
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card bg-secondary shadow">
+      <div class="card-body">
+        <h5>Total Users</h5>
+        <p class="display-6"><%= userCount %></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bg-secondary shadow">
+      <div class="card-body">
+        <h5>Total Bets</h5>
+        <p class="display-6"><%= betCount %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <a href="/admin/draws" class="btn btn-warning">Manage Draws</a>
+</div>

@@ -1,0 +1,43 @@
+
+<div class="row">
+  <div class="col-md-6 mx-auto">
+    <div class="card bg-secondary shadow-lg border-info border-2">
+      <div class="card-body p-4">
+        <h2 class="mb-3 text-info text-center">Color Game</h2>
+
+        <% if (!draw) { %>
+          <p class="text-center text-light">
+            No active color draw right now. Please check again.
+          </p>
+        <% } else { %>
+          <p class="text-light small text-center mb-3">
+            Next draw at: <strong><%= new Date(draw.draw_time).toLocaleString() %></strong>
+          </p>
+
+          <form action="/play/color" method="POST">
+            <input type="hidden" name="draw_id" value="<%= draw.id %>" />
+            <div class="mb-3">
+              <label class="form-label">Choose a color</label>
+              <div class="d-flex justify-content-between">
+                <% ['RED','GREEN','BLUE','YELLOW'].forEach(c => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="chosen_color" value="<%= c %>" required />
+                    <label class="form-check-label">
+                      <span class="badge rounded-pill bg-light text-dark"><%= c %></span>
+                    </label>
+                  </div>
+                <% }); %>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Bet Amount (₹)</label>
+              <input type="number" step="0.01" min="1" name="amount" class="form-control" required />
+            </div>
+            <p class="text-muted small mb-2">Payout: 2x on correct color.</p>
+            <button class="btn btn-info w-100">Place Bet</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

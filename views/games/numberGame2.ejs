@@ -1,0 +1,65 @@
+<div class="row">
+  <div class="col-md-6 mx-auto">
+    <div class="card bg-secondary shadow-lg border-info border-2">
+      <div class="card-body p-4">
+
+        <h2 class="mb-3 text-info text-center">
+          🎯 Number Game (1–50)
+        </h2>
+
+        <% if (!draw) { %>
+          <p class="text-center text-light">
+            No active draw right now.
+          </p>
+        <% } else { %>
+
+        <p class="text-light small text-center">
+          Next draw at:
+          <strong><%= new Date(draw.draw_time).toLocaleString() %></strong>
+        </p>
+
+        <form action="/play/numberGame2" method="POST">
+
+          <input type="hidden" name="draw_id" value="<%= draw.id %>">
+
+          <!-- Number -->
+          <div class="mb-3">
+            <label class="form-label">Choose Number (1–50)</label>
+            <input type="number" min="1" max="50"
+              name="chosen_number"
+              class="form-control" required>
+          </div>
+
+          <!-- Tickets -->
+          <div class="mb-3">
+            <label class="form-label">Tickets (Max 5)</label>
+            <input type="number" min="1" max="5"
+              name="tickets"
+              class="form-control" required>
+          </div>
+
+          <!-- Amount -->
+          <div class="mb-3">
+            <label class="form-label">Amount (AED 2–200)</label>
+            <input type="number" min="2" max="200"
+              step="1"
+              name="amount"
+              class="form-control" required>
+          </div>
+
+          <p class="text-light small">
+            Payout:
+            <strong>Amount × 40</strong>
+          </p>
+
+          <button class="btn btn-info w-100">
+            Place Bet
+          </button>
+
+        </form>
+
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

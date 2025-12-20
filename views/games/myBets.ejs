@@ -1,0 +1,94 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-10 mx-auto">
+      <div class="card bg-dark text-light shadow-lg border-warning border-2">
+        <div class="card-body">
+
+          <h3 class="text-warning text-center mb-4">
+            🎟️ My Bets
+          </h3>
+
+          <% if (!bets || bets.length === 0) { %>
+            <p class="text-center text-muted">
+              You have not placed any bets yet.
+            </p>
+          <% } else { %>
+
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle text-center">
+                <thead class="table-warning text-dark">
+                  <tr>
+                    <th>#</th>
+                    <th>Game</th>
+                    <th>Choice</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payout</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% bets.forEach((bet, index) => { %>
+                    <tr>
+                      <td><%= index + 1 %></td>
+
+                      <!-- Game Type -->
+                      <td>
+                        <span class="badge bg-info">
+                          <%= bet.chosen_number ? 'Number' : 'Color' %>
+                        </span>
+                      </td>
+
+                      <!-- Choice -->
+                      <td>
+                        <% if (bet.chosen_number) { %>
+                          🎯 <strong><%= bet.chosen_number %></strong>
+                        <% } else { %>
+                          🎨 <strong><%= bet.chosen_color %></strong>
+                        <% } %>
+                      </td>
+
+                      <!-- Amount -->
+                      <td>
+                        AED <%= bet.amount %>
+                      </td>
+
+                      <!-- Status -->
+                      <td>
+                        <% if (bet.status === 'PENDING') { %>
+                          <span class="badge bg-secondary">Pending</span>
+                        <% } else if (bet.status === 'WON') { %>
+                          <span class="badge bg-success">Won</span>
+                        <% } else { %>
+                          <span class="badge bg-danger">Lost</span>
+                        <% } %>
+                      </td>
+
+                      <!-- Payout -->
+                      <td>
+                        <% if (bet.status === 'WON') { %>
+                          <span class="text-success fw-bold">
+                            AED <%= bet.payout %>
+                          </span>
+                        <% } else { %>
+                          -
+                        <% } %>
+                      </td>
+
+                      <!-- Date -->
+                      <td>
+                        <%= new Date(bet.placed_at).toLocaleString() %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+
+          <% } %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

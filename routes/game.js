@@ -268,6 +268,43 @@ router.post('/play/numberGame2', ensureAuth, async (req, res) => {
   }
 });
 
+router.get('/play/results', ensureAuth, async(req, res) => {
+    try {
+    const [results] = await db.query(
+      `SELECT 
+          d.id,
+          d.game_type_id,
+          d.draw_time,
+          d.winning_number,
+          g.code,
+          g.name
+      FROM draws AS d
+      LEFT JOIN game_types AS g ON d.game_type_id = g.id
+      WHERE d.winning_number > 0
+      LIMIT 0, 1000;`,
+    );
+    console.log(results);
+
+    res.render('games/results', {
+      title: 'Results',
+      results
+    });
+
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Could not retrieve your bets.');
+    res.redirect('/');
+  }
+});
+
+router.get('/play/FAQs', ensureAuth, (req, res) => {
+  res.render('games/FAQs', { title: 'FAQs' });
+});
+
+router.get('/play/rules', ensureAuth, (req, res) => {
+  res.render('games/rules', { title: 'Rules' });
+});
+
 
 
 module.exports = router;

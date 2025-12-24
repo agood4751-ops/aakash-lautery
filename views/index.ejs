@@ -9,6 +9,51 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css" />
   <style>
+.promo-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.promo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.promo-card::after {
+    content: "Coming Soon";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    letter-spacing: 1px;
+    transition: opacity 0.35s ease;
+    backdrop-filter: blur(4px);
+}
+
+.promo-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.promo-card:hover img {
+    transform: scale(1.08);
+}
+
+.promo-card:hover::after {
+    opacity: 1;
+}
+
     /* Small helpers for visual polish */
     .hero {
       min-height: 50vh;
@@ -236,18 +281,32 @@
         </div>
       </div> -->
 
-      <!-- Upcoming/Promotions Card -->
-      <div class="col-12">
-        <div class="card bg-secondary border-0 p-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <div>
-              <h5 class="mb-0 text-warning">Upcoming Draws & Promotions</h5>
-              <small class="text-muted">Happy hours and increased jackpots this week.</small>
-            </div>
-            <a href="/promotions" class="btn btn-outline-light">View Promotions</a>
-          </div>
-        </div>
+      <!-- Image Cards -->
+<div class="col-12">
+  <div class="row g-4">
+
+    <div class="col-md-4">
+      <div class="promo-card" onclick="openComingSoon()">
+        <img src="/assets/1.png" alt="Promo 1">
       </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="promo-card" onclick="openComingSoon()">
+        <img src="/assets/2.png" alt="Promo 2">
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="promo-card" onclick="openComingSoon()">
+        <img src="/assets/3.png" alt="Promo 3">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
     </div>
   </section>
 

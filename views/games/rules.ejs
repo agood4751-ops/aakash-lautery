@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: radial-gradient(circle at top, #1a1a2e, #0b0b14);
+            color: #ffffff;
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border-radius: 18px;
+        }
+
+        .accordion-button {
+            background: transparent;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background: rgba(124, 77, 255, 0.15);
+        }
+
+        .accordion-button::after {
+            filter: invert(1);
+        }
+
+        .rule-list li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+            color: white;
+        }
+
+        .badge-game {
+            background: linear-gradient(135deg, #7c4dff, #651fff);
+        }
+
+        .badge-jackpot {
+            background: linear-gradient(135deg, #ff9100, #ff6d00);
+        }
+
+        .highlight {
+            color: #00e676;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container py-5">
+
+    <!-- PAGE HEADER -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">
+            <i class="bi bi-journal-text text-info"></i> Game Rules
+        </h1>
+        <p class="text-light opacity-75">
+            Click on a game to view or hide its complete rules
+        </p>
+    </div>
+
+    <!-- ACCORDION -->
+    <div class="accordion" id="gameRules">
+
+        <!-- GAME 1 -->
+        <div class="accordion-item glass-card mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed rule-toggle"
+                        type="button"
+                        data-target="#game1">
+                    Sprint 70x
+                    <span class="badge badge-game ms-2">High Frequency</span>
+                </button>
+            </h2>
+
+            <div id="game1" class="accordion-collapse collapse">
+                <div class="accordion-body">
+                    <ul class="rule-list">
+                        <li><strong>Game Rules Version:</strong> V1.0.0</li>
+                        <li><strong>Game Title:</strong> Sprint 70x</li>
+                        <li><strong>Live Draw:</strong> Every 2 hours (12 times daily) starting from 00:00 UTC</li>
+                        <li><strong>Sales Suspension:</strong> 5 minutes before each draw</li>
+                        <li><strong>Sales Period:</strong> Tickets available immediately after previous draw result</li>
+                        <li><strong>How to Play:</strong> Choose one (1) number between 1 and 100</li>
+                        <li><strong>Winning Condition:</strong> Your number must match the winning number for that Draw ID</li>
+                        <li><strong>Prize Structure:</strong> <span class="highlight">70x</span> multiplier of entry amount</li>
+                        <li><strong>Example:</strong> 1 USDT → 70 USDT</li>
+                        <li><strong>Example:</strong> 100 USDT → 7,000 USDT</li>
+                        <li><strong>Odds of Winning:</strong> 1 in 100 (1.00%)</li>
+                        <li><strong>Special Feature:</strong> Fixed-rate payout. All winners receive full 70x (subject to platform liability cap)</li>
+                        <li><strong>Ticket Price:</strong> Flexible — 1 USDT to 100 USDT</li>
+                        <li><strong>Maximum Tickets:</strong> 5 tickets per user per draw</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME 2 -->
+        <div class="accordion-item glass-card mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed rule-toggle"
+                        type="button"
+                        data-target="#game2">
+                    Mid-Day 40x
+                    <span class="badge badge-game ms-2">Strategic Odds</span>
+                </button>
+            </h2>
+
+            <div id="game2" class="accordion-collapse collapse">
+                <div class="accordion-body">
+                    <ul class="rule-list">
+                        <li><strong>Game Rules Version:</strong> V1.0.0</li>
+                        <li><strong>Game Title:</strong> Mid-Day 40x</li>
+                        <li><strong>Live Draw:</strong> Every 8 hours at 00:00, 08:00, 16:00 UTC</li>
+                        <li><strong>Sales Suspension:</strong> 15 minutes before each draw</li>
+                        <li><strong>Sales Period:</strong> Tickets available except during suspension window</li>
+                        <li><strong>How to Play:</strong> Choose one (1) number between 1 and 50</li>
+                        <li><strong>Winning Condition:</strong> Number must match the winning number for that cycle</li>
+                        <li><strong>Prize Structure:</strong> <span class="highlight">40x</span> multiplier of entry amount</li>
+                        <li><strong>Example:</strong> 2 USDT → 80 USDT</li>
+                        <li><strong>Example:</strong> 200 USDT → 8,000 USDT</li>
+                        <li><strong>Odds of Winning:</strong> 1 in 50 (2.00%)</li>
+                        <li><strong>Special Feature:</strong> Highest probability game among all tiers</li>
+                        <li><strong>Ticket Price:</strong> Flexible — 2 USDT to 200 USDT</li>
+                        <li><strong>Maximum Tickets:</strong> 5 tickets per user per draw</li>
+                        <li><strong>Average RTP:</strong> 80.00%</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME 3 -->
+        <div class="accordion-item glass-card">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed rule-toggle"
+                        type="button"
+                        data-target="#game3">
+                    Daily Grand 10k
+                    <span class="badge badge-jackpot ms-2">Jackpot</span>
+                </button>
+            </h2>
+
+            <div id="game3" class="accordion-collapse collapse">
+                <div class="accordion-body">
+                    <ul class="rule-list">
+                        <li><strong>Game Rules Version:</strong> V1.0.0</li>
+                        <li><strong>Game Title:</strong> Daily Grand 10k</li>
+                        <li><strong>Live Draw:</strong> Every day at 20:00 UTC</li>
+                        <li><strong>Sales Suspension:</strong> 1 hour before draw (19:00 UTC)</li>
+                        <li><strong>Sales Period:</strong> Tickets available 23 hours a day</li>
+                        <li><strong>How to Play:</strong> Choose one (1) number between 1 and 999</li>
+                        <li><strong>Winning Condition:</strong> Match the draw result to win the jackpot</li>
+                        <li><strong>Prize Structure:</strong> <span class="highlight">10,000 USDT</span> jackpot</li>
+                        <li><strong>Odds of Winning:</strong> 1 in 999 (~0.1%)</li>
+                        <li><strong>Special Feature:</strong> Full jackpot paid to every winning ticket</li>
+                        <li><strong>Ticket Price:</strong> Fixed — 10 USDT</li>
+                        <li><strong>Maximum Tickets:</strong> 10 tickets per user per draw</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ✅ TOGGLE CONTROL JS -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('.rule-toggle');
+
+    buttons.forEach(btn => {
+        const target = document.querySelector(btn.dataset.target);
+        const collapse = new bootstrap.Collapse(target, { toggle: false });
+
+        btn.addEventListener('click', () => {
+            const isOpen = target.classList.contains('show');
+
+            document.querySelectorAll('.accordion-collapse.show').forEach(open => {
+                if (open !== target) {
+                    bootstrap.Collapse.getInstance(open)?.hide();
+                    open.previousElementSibling.querySelector('button')
+                        .classList.add('collapsed');
+                }
+            });
+
+            if (isOpen) {
+                collapse.hide();
+                btn.classList.add('collapsed');
+            } else {
+                collapse.show();
+                btn.classList.remove('collapsed');
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+<style>
+.modal-content {
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.form-control,
+.form-select {
+    background: #12121a;
+    border: 1px solid #2a2a3c;
+    color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #ffc107;
+    box-shadow: none;
+}
+
+.profile-card {
+    background: linear-gradient(135deg, #1e1e2f, #12121c);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+    color: #fff;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.profile-info h4 {
+    font-weight: 700;
+}
+
+.profile-body {
+    padding: 30px;
+}
+
+.wallet-box {
+    background: rgba(255,255,255,0.06);
+    padding: 20px;
+    border-radius: 14px;
+    height: 100%;
+}
+
+.wallet-box .label {
+    font-size: 14px;
+    color: #bbb;
+}
+
+.balance {
+    margin-top: 10px;
+    font-size: 32px;
+    font-weight: 800;
+    color: #00e676;
+}
+
+.info-box {
+    background: rgba(255,255,255,0.06);
+    padding: 20px;
+    border-radius: 14px;
+    height: 100%;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.actions .btn {
+    flex: 1;
+    min-width: 220px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+</style>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-10 col-md-12">
+
+      <div class="profile-card">
+        <!-- Header -->
+        <div class="profile-header">
+          <div class="avatar">
+            <span><%= user.name.charAt(0).toUpperCase() %></span>
+          </div>
+          <div class="profile-info">
+            <h4 class="mb-1"><%= user.name %></h4>
+            <p class="text-muted mb-0"><%= user.email %></p>
+            <% if (user.is_admin) { %>
+              <span class="badge bg-warning text-dark mt-2">Admin</span>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="profile-body">
+          <div class="row g-4">
+
+            <!-- Wallet -->
+            <div class="col-md-6">
+              <div class="wallet-box">
+                <span class="label">Wallet Balance</span>
+                <h2 class="balance">
+                  <i class="bi bi-currency-dollar"></i>
+                  <%= user.balance %>
+                </h2>
+              </div>
+            </div>
+
+            <!-- Account Info -->
+            <div class="col-md-6">
+              <div class="info-box">
+                <div class="info-row">
+                  <span>User ID</span>
+                  <strong>#<%= user.id %></strong>
+                </div>
+                <div class="info-row">
+                  <span>Account Created</span>
+                  <strong>
+                    <%= new Date(user.created_at).toLocaleDateString() %>
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Actions -->
+          <div class="actions mt-4">
+            <button class="btn btn-success btn-lg" onclick="openRechargeModal()">
+              <i class="bi bi-wallet2"></i> Recharge Wallet
+            </button>
+
+            <button class="btn btn-outline-danger btn-lg" onclick="openWithdrawModal()">
+              <i class="bi bi-arrow-down-circle"></i> Withdraw Money
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Recharge Wallet Modal -->
+<div class="modal fade" id="rechargeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4">
+
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title text-warning">
+          <i class="bi bi-wallet2"></i> Recharge Wallet
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="rechargeForm">
+
+          <!-- Amount -->
+          <div class="mb-3">
+            <label class="form-label">Amount</label>
+            <input type="number"
+                   class="form-control"
+                   name="amount"
+                   min="10"
+                   placeholder="Enter amount"
+                   required>
+            <small class="text-muted">Minimum recharge: 10</small>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="mb-3">
+            <label class="form-label">Payment Method</label>
+            <select class="form-select bg-dark text-light border-secondary" required>
+              <option value="">Select method</option>
+              <option>UPI</option>
+              <option>Credit / Debit Card</option>
+              <option>Crypto (USDT)</option>
+            </select>
+          </div>
+
+          <!-- Info -->
+          <div class="alert alert-secondary small">
+            Funds will be added instantly after successful payment.
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">
+            Proceed to Pay
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw Money Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4">
+
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title text-danger">
+          <i class="bi bi-arrow-down-circle"></i> Withdraw Money
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="withdrawForm">
+
+          <!-- Available Balance -->
+          <div class="mb-3">
+            <label class="form-label">Available Balance</label>
+            <input type="text"
+                   class="form-control"
+                   value="<%= user.balance %>"
+                   disabled>
+          </div>
+
+          <!-- Withdraw Amount -->
+          <div class="mb-3">
+            <label class="form-label">Withdraw Amount</label>
+            <input type="number"
+                   class="form-control"
+                   name="amount"
+                   min="10"
+                   max="<%= user.balance %>"
+                   placeholder="Enter amount"
+                   required>
+          </div>
+
+          <!-- Destination -->
+          <div class="mb-3">
+            <label class="form-label">Withdraw To</label>
+            <select class="form-select bg-dark text-light border-secondary" required>
+              <option value="">Select destination</option>
+              <option>Bank Account</option>
+              <option>UPI</option>
+              <option>Crypto Wallet (USDT)</option>
+            </select>
+          </div>
+
+          <!-- Warning -->
+          <div class="alert alert-warning small">
+            Withdrawals may take up to 24 hours for processing.
+          </div>
+
+          <button type="submit" class="btn btn-danger w-100">
+            Request Withdrawal
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+function openRechargeModal() {
+  const modal = new bootstrap.Modal(document.getElementById('rechargeModal'));
+  modal.show();
+}
+
+function openWithdrawModal() {
+  const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
+  modal.show();
+}
+</script>
+

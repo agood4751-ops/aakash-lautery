@@ -10,25 +10,44 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, country_code, phone, password, confirmPassword } = req.body;
+  const fullPhone = country_code + phone;
+
   try {
-    const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length) {
-      req.flash('error', 'Email already registered.');
+    /* 1️⃣ Password confirmation (MANDATORY backend check) */
+    if (password !== confirmPassword) {
+      req.flash('error', 'Passwords do not match.');
       return res.redirect('/register');
     }
 
+    /* 2️⃣ Check email OR phone already exists */
+    const [existing] = await db.query(
+      'SELECT id FROM users WHERE email = ? OR phone = ?',
+      [email, fullPhone]
+    );
+
+    if (existing.length) {
+      req.flash('error', 'Email or phone number already registered.');
+      return res.redirect('/register');
+    }
+
+    /* 3️⃣ Hash password */
     const hash = await bcrypt.hash(password, 10);
+
+    /* 4️⃣ Insert user */
     await db.query(
-      'INSERT INTO users (name, email, password_hash, balance) VALUES (?, ?, ?, ?)',
-      [name, email, hash, 1000.0] // give some starting balance
+      `INSERT INTO users 
+       (name, email, phone, password_hash, balance) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [name, email, fullPhone, hash, 0.00]
     );
 
     req.flash('success', 'Registration successful. Please login.');
     res.redirect('/login');
+
   } catch (err) {
     console.error(err);
-    req.flash('error', 'Something went wrong.');
+    req.flash('error', 'Something went wrong. Please try again.');
     res.redirect('/register');
   }
 });
@@ -39,9 +58,27 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, phone, password } = req.body;
+  if ((!email && !phone) || !password) {
+    req.flash('error', 'Please provide email or phone and password.');
+    return res.redirect('/login');
+  }
+  console.log(req.body);
   try {
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    let rows; // ✅ declare once
+
+    if (phone) {
+      [rows] = await db.query(
+        'SELECT * FROM users WHERE phone = ?',
+        [phone]
+      );
+    } else {
+      [rows] = await db.query(
+        'SELECT * FROM users WHERE email = ?',
+        [email]
+      );
+    }
+
     if (!rows.length) {
       req.flash('error', 'Invalid credentials.');
       return res.redirect('/login');

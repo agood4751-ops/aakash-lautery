@@ -1,48 +1,242 @@
-<footer class="mt-5 pt-5 pb-4 bg-black text-light border-top border-secondary">
+<style>
+  .site-footer {
+    background: linear-gradient(180deg, #050505, #0d0d12);
+    color: #e5e5e5;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Headings */
+.footer-title {
+    color: #ffc107;
+    letter-spacing: 0.5px;
+}
+
+.footer-heading {
+    color: #ffc107;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Text */
+.footer-text {
+    color: #bfc3c9;
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+/* Links */
+.footer-list li {
+    margin-bottom: 8px;
+}
+
+.footer-list a {
+    color: #a9adb3;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.footer-list a:hover {
+    color: #ffc107;
+    transform: translateX(4px);
+}
+
+/* Social Links */
+.footer-social-block {
+    display: flex;
+    gap: 14px;
+}
+
+.footer-social-block a {
+    width: 42px;
+    height: 42px;
+    background: #111118;
+    border: 1px solid #2a2a3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a9adb3;
+    font-size: 1.3rem;
+    transition: all 0.3s ease;
+}
+
+.footer-social-block a:hover {
+    color: #ffc107;
+    border-color: #ffc107;
+    transform: translateY(-4px);
+}
+
+/* Newsletter */
+.footer-newsletter .form-control {
+    background: #111118;
+    border: 1px solid #2a2a3c;
+    color: #fff;
+}
+
+.footer-newsletter .form-control::placeholder {
+    color: #8c8f94;
+}
+
+.footer-newsletter .form-control:focus {
+    box-shadow: none;
+    border-color: #ffc107;
+}
+
+/* Divider */
+.footer-divider {
+    border-color: rgba(255,255,255,0.08);
+}
+
+/* Bottom text */
+.footer-bottom-text {
+    color: #9fa3a9;
+    font-size: 0.85rem;
+}
+
+  .site-footer {
+    background: linear-gradient(180deg, #050505, #0d0d12);
+    color: #e5e5e5;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Headings */
+.footer-title {
+    color: #ffc107;
+    letter-spacing: 0.5px;
+}
+
+.footer-heading {
+    color: #ffc107;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Text */
+.footer-text {
+    color: #bfc3c9;
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+/* Links */
+.footer-list li {
+    margin-bottom: 8px;
+}
+
+.footer-list a {
+    color: #a9adb3;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.footer-list a:hover {
+    color: #ffc107;
+    transform: translateX(4px);
+}
+
+/* Newsletter */
+.footer-newsletter .form-control {
+    background: #111118;
+    border: 1px solid #2a2a3c;
+    color: #fff;
+}
+
+.footer-newsletter .form-control::placeholder {
+    color: #8c8f94;
+}
+
+.footer-newsletter .form-control:focus {
+    box-shadow: none;
+    border-color: #ffc107;
+}
+
+/* Divider */
+.footer-divider {
+    border-color: rgba(255,255,255,0.08);
+}
+
+/* Bottom text */
+.footer-bottom-text {
+    color: #9fa3a9;
+    font-size: 0.85rem;
+}
+
+/* Social Icons */
+.footer-social a {
+    color: #a9adb3;
+    font-size: 1.3rem;
+    transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.footer-social a:hover {
+    color: #ffc107;
+    transform: translateY(-3px);
+}
+
+</style>
+<!-- Bootstrap Icons (REQUIRED) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<footer class="site-footer mt-5 pt-5 pb-4">
   <div class="container">
 
     <div class="row gy-4">
 
       <!-- Logo + About -->
       <div class="col-md-4">
-        <h4 class="fw-bold text-warning">Galaxy Lottery</h4>
-        <p class="text-muted small mt-2">
-          Galaxy Lottery offers exciting number & color-based games with instant draws, daily jackpots, 
+        <h4 class="fw-bold footer-title">Galaxy Lottery</h4>
+        <p class="footer-text mt-3">
+          Galaxy Lottery offers exciting number games with instant draws, daily jackpots,
           and secure gameplay. Experience a modern, transparent lottery platform built for everyone.
         </p>
       </div>
 
       <!-- Quick Links -->
       <div class="col-md-2">
-        <h6 class="text-warning mb-3">Quick Links</h6>
-        <ul class="list-unstyled small">
-          <li><a href="/" class="text-muted text-decoration-none footer-link">Home</a></li>
-          <li><a href="/play/number" class="text-muted text-decoration-none footer-link">Number Game</a></li>
-          <li><a href="/play/color" class="text-muted text-decoration-none footer-link">Color Game</a></li>
-          <li><a href="/promotions" class="text-muted text-decoration-none footer-link">Promotions</a></li>
+        <h6 class="footer-heading">Quick Links</h6>
+        <ul class="list-unstyled footer-list">
+          <li><a href="/">Home</a></li>
+          <li><a href="/play/number">Sprint 70x</a></li>
+          <li><a href="/play/numberGame2">Mid-Day 40x</a></li>
         </ul>
       </div>
 
       <!-- Support Links -->
       <div class="col-md-3">
-        <h6 class="text-warning mb-3">Support</h6>
-        <ul class="list-unstyled small">
-          <li><a href="/contact" class="text-muted text-decoration-none footer-link">Contact Us</a></li>
-          <li><a href="/help" class="text-muted text-decoration-none footer-link">How to Play</a></li>
-          <li><a href="/rules" class="text-muted text-decoration-none footer-link">Game Rules</a></li>
-          <li><a href="/privacy" class="text-muted text-decoration-none footer-link">Privacy Policy</a></li>
-          <li><a href="/terms" class="text-muted text-decoration-none footer-link">Terms & Conditions</a></li>
+        <h6 class="footer-heading">Support</h6>
+        <ul class="list-unstyled footer-list">
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="/play/FAQs">FAQs</a></li>
+          <li><a href="/play/rules">Game Rules</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms & Conditions</a></li>
         </ul>
       </div>
 
-      <!-- Newsletter -->
+      <!-- Social + Newsletter -->
       <div class="col-md-3">
-        <h6 class="text-warning mb-3">Stay Updated</h6>
-        <p class="text-muted small">Subscribe for jackpot alerts & offers.</p>
+        <h6 class="footer-heading">Connect With Us</h6>
+
+        <!-- Social Links -->
+        <div class="footer-social-block mb-3">
+          <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+          <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="#" aria-label="Telegram"><i class="bi bi-telegram"></i></a>
+          <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+        </div>
+
+        <p class="footer-text small mb-2">
+          Subscribe for jackpot alerts & exclusive offers.
+        </p>
 
         <form>
-          <div class="input-group">
-            <input type="email" class="form-control bg-dark text-light border-secondary" placeholder="Enter email" />
+          <div class="input-group footer-newsletter">
+            <input type="email" class="form-control" placeholder="Enter email">
             <button class="btn btn-warning">Subscribe</button>
           </div>
         </form>
@@ -50,27 +244,7 @@
 
     </div>
 
-    <hr class="border-secondary my-4">
-
-    <!-- Bottom Row -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-      <p class="small text-muted mb-0">
-        © <%= new Date().getFullYear() %> Galaxy Lottery. All Rights Reserved.
-      </p>
-
-      <div class="d-flex gap-3 mt-3 mt-md-0">
-        <a href="#" class="text-muted fs-5"><i class="bi bi-facebook"></i></a>
-        <a href="#" class="text-muted fs-5"><i class="bi bi-instagram"></i></a>
-        <a href="#" class="text-muted fs-5"><i class="bi bi-telegram"></i></a>
-        <a href="#" class="text-muted fs-5"><i class="bi bi-youtube"></i></a>
-      </div>
-    </div>
+    <hr class="footer-divider my-4">
 
   </div>
 </footer>
-
-<style>
-  footer .footer-link:hover {
-    color: #ffc107 !important;
-  }
-</style>

@@ -1,21 +1,82 @@
-
 <div class="row justify-content-center">
   <div class="col-md-5">
-    <div class="card bg-secondary border-0 shadow-lg">
+    <div class="card bg-secondary border-0 shadow-lg position-relative">
+
+      <!-- ❌ Close Icon -->
+      <a href="/" 
+         class="position-absolute top-0 end-0 p-3 text-light"
+         style="font-size: 1.2rem; text-decoration: none;">
+        ✕
+      </a>
+
       <div class="card-body p-4">
         <h2 class="mb-3 text-center text-warning">Login</h2>
+
+        <!-- Login Type Toggle -->
+        <div class="btn-group w-100 mb-4" role="group">
+          <button type="button" class="btn btn-outline-warning active" id="emailTab">
+            Email
+          </button>
+          <button type="button" class="btn btn-outline-warning" id="phoneTab">
+            Phone
+          </button>
+        </div>
+
         <form action="/login" method="POST">
-          <div class="mb-3">
+
+          <!-- Email Login -->
+          <div class="mb-3" id="emailField">
             <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" required />
+            <input type="email"
+                   class="form-control"
+                   name="email"
+                   placeholder="Enter your email">
           </div>
+
+          <!-- Phone Login -->
+          <div class="mb-3 d-none" id="phoneField">
+            <label class="form-label">Phone Number</label>
+            <input type="tel"
+                   class="form-control"
+                   name="phone"
+                   placeholder="Enter phone number">
+          </div>
+
+          <!-- Password -->
           <div class="mb-3">
             <label class="form-label">Password</label>
-            <input type="password" class="form-control" name="password" required />
+            <input type="password"
+                   class="form-control"
+                   name="password"
+                   required />
           </div>
-          <button class="btn btn-warning w-100">Login</button>
+
+          <button class="btn btn-warning w-100">
+            Login
+          </button>
         </form>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+const emailTab = document.getElementById('emailTab');
+const phoneTab = document.getElementById('phoneTab');
+const emailField = document.getElementById('emailField');
+const phoneField = document.getElementById('phoneField');
+
+emailTab.addEventListener('click', () => {
+  emailTab.classList.add('active');
+  phoneTab.classList.remove('active');
+  emailField.classList.remove('d-none');
+  phoneField.classList.add('d-none');
+});
+
+phoneTab.addEventListener('click', () => {
+  phoneTab.classList.add('active');
+  emailTab.classList.remove('active');
+  phoneField.classList.remove('d-none');
+  emailField.classList.add('d-none');
+});
+</script>

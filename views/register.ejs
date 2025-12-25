@@ -1,25 +1,175 @@
+<style>
+.register-card {
+    background: #1c1c26;
+    border-radius: 16px;
+    color: #fff;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    color: #d0d0d0;
+}
+
+.form-control,
+.input-group-text {
+    background: #12121a;
+    border: 1px solid #2a2a3c;
+    color: #fff;
+    border-radius: 10px;
+}
+
+.form-control:focus {
+    background: #12121a;
+    border-color: #ffc107;
+    box-shadow: none;
+    color: #fff;
+}
+
+.input-group-text {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.btn-warning {
+    border-radius: 12px;
+}
+
+small {
+    font-size: 0.8rem;
+}
+</style>
 
 <div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="card bg-secondary border-0 shadow-lg">
-      <div class="card-body p-4">
-        <h2 class="mb-3 text-center text-warning">Create Account</h2>
-        <form action="/register" method="POST">
+  <div class="col-lg-5 col-md-7 col-sm-10">
+    <div class="card register-card shadow-lg border-0">
+
+      <!-- ❌ Close Icon -->
+      <a href="/" 
+         class="position-absolute top-0 end-0 p-3 text-light"
+         style="font-size: 1.2rem; text-decoration: none;">
+        ✕
+      </a>
+
+      <div class="card-body p-4 p-md-5">
+
+        <h2 class="text-center text-warning fw-bold mb-1">
+          Create Account
+        </h2>
+        <p class="text-center text-muted mb-4">
+          Create your account to start playing
+        </p>
+
+        <form action="/register" method="POST" id="registerForm">
+
+          <!-- Full Name -->
           <div class="mb-3">
             <label class="form-label">Full Name</label>
-            <input type="text" class="form-control" name="name" required />
+            <input type="text"
+                   class="form-control"
+                   name="name"
+                   placeholder="John Doe"
+                   required>
           </div>
+
+          <!-- Email -->
           <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" required />
+            <label class="form-label">Email Address</label>
+            <input type="email"
+                   class="form-control"
+                   name="email"
+                   placeholder="you@example.com"
+                   required>
           </div>
+
+          <!-- Phone Number -->
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+
+            <div class="input-group">
+              <!-- Country Code -->
+              <select class="form-select" name="country_code" style="max-width: 110px;" required>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+91">🇮🇳 +91</option>
+              </select>
+
+              <!-- Phone Input -->
+              <input
+                type="tel"
+                class="form-control"
+                name="phone"
+                placeholder="Enter mobile number"
+                pattern="[0-9]{9,10}"
+                maxlength="10"
+                inputmode="numeric"
+                required
+              />
+            </div>
+
+            <small class="text-muted">
+              Enter number without country code
+            </small>
+          </div>
+
+          <!-- Password -->
           <div class="mb-3">
             <label class="form-label">Password</label>
-            <input type="password" class="form-control" name="password" required minlength="6" />
+            <input type="password"
+                   class="form-control"
+                   id="password"
+                   name="password"
+                   minlength="6"
+                   placeholder="Minimum 6 characters"
+                   required>
           </div>
-          <button class="btn btn-warning w-100">Register</button>
+
+          <!-- Confirm Password -->
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input type="password"
+                   class="form-control"
+                   id="confirmPassword"
+                   name="confirmPassword"
+                   placeholder="Re-enter password"
+                   required>
+            <small id="passwordError" class="text-danger d-none">
+              Passwords do not match
+            </small>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold">
+            Create Account
+          </button>
+
         </form>
+
       </div>
     </div>
   </div>
 </div>
+
+<script>
+const password = document.getElementById('password');
+const confirmPassword = document.getElementById('confirmPassword');
+const errorText = document.getElementById('passwordError');
+const form = document.getElementById('registerForm');
+
+function checkPasswordMatch() {
+  if (confirmPassword.value && password.value !== confirmPassword.value) {
+    errorText.classList.remove('d-none');
+    return false;
+  } else {
+    errorText.classList.add('d-none');
+    return true;
+  }
+}
+
+password.addEventListener('input', checkPasswordMatch);
+confirmPassword.addEventListener('input', checkPasswordMatch);
+
+form.addEventListener('submit', (e) => {
+  if (!checkPasswordMatch()) {
+    e.preventDefault();
+  }
+});
+</script>

@@ -305,6 +305,32 @@ router.get('/play/rules', ensureAuth, (req, res) => {
   res.render('games/rules', { title: 'Rules' });
 });
 
+router.get('/play/myProfile', ensureAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const [rows] = await db.query(
+      "SELECT id, name, email, is_admin, balance, created_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!rows.length) {
+      req.flash('error', 'User not found');
+      return res.redirect('/');
+    }
+
+    const user = rows[0];
+
+    res.render('games/myProfile', {
+      title: 'My Profile',
+      user
+    });
+
+  } catch (err) {
+    req.flash('error', 'Unable to load profile');
+    res.redirect('/');
+  }
+});
+
 
 
 module.exports = router;

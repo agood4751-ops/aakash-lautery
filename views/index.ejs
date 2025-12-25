@@ -80,7 +80,13 @@
 /* Mobile */
 @media (max-width: 768px) {
     .carousel-img {
-        height: 260px;
+        height: auto;
+        object-fit: contain;   /* show full image */
+        background: #000;
+    }
+
+    .custom-carousel {
+        max-height: none;
     }
 }
 
@@ -238,7 +244,7 @@
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h5 class="card-title text-warning">Daily Grand 10k</h5>
-                <p class="card-text text-light small">Choose one (1) number between 1 and 999.</p>
+                <p class="card-text text-light small">Pick 1-999 numbers and win based on the draw. Fast results.</p>
               </div>
               <span class="badge bg-dark text-light badge-players">1.8k players</span>
             </div>
@@ -250,7 +256,7 @@
             </ul>
 
             <div class="d-flex gap-2">
-              <a href="/play/color" class="btn btn-warning flex-grow-1">Start Game</a>
+              <a href="#" onclick="openComingSoon()" class="btn btn-warning flex-grow-1">Start Game</a>
               <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal3"
                 data-title="Color Game Rules">View Rules</button>
             </div>
@@ -561,6 +567,31 @@
   </div>
 </div>
 
+<!-- Coming Soon Modal -->
+<div class="modal fade" id="comingSoonModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4">
+      
+      <div class="modal-body text-center p-5">
+        <div class="mb-3">
+          <i class="bi bi-rocket-takeoff-fill text-warning fs-1"></i>
+        </div>
+
+        <h3 class="fw-bold mb-2">Coming Soon 🚀</h3>
+        <p class="text-muted mb-4">
+          We’re working hard to bring you something amazing.<br>
+          Stay tuned for exciting updates!
+        </p>
+
+        <button type="button" class="btn btn-outline-warning px-4" data-bs-dismiss="modal">
+          Got it
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
   <%- include('partials/footer') %>
 
@@ -646,6 +677,15 @@
 
 })();
 </script>
+<script>
+function openComingSoon() {
+    const modal = new bootstrap.Modal(
+        document.getElementById('comingSoonModal')
+    );
+    modal.show();
+}
+</script>
+
 
 
 

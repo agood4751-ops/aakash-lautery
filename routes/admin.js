@@ -47,7 +47,7 @@ router.post('/draws', ensureAdmin, async (req, res) => {
 // Declare result (announce winner)
 router.post('/draws/:id/close', ensureAdmin, async (req, res) => {
   const drawId = req.params.id;
-  const { winning_number, winning_color } = req.body;
+  const { winning_number } = req.body;
 
   try {
     // Get draw & game type
@@ -66,8 +66,8 @@ router.post('/draws/:id/close', ensureAdmin, async (req, res) => {
 
     // Update draw with result
     await db.query(
-      'UPDATE draws SET winning_number = ?, winning_color = ?, is_closed = 1 WHERE id = ?',
-      [winning_number || null, winning_color || null, drawId]
+      'UPDATE draws SET winning_number = ?, is_closed = 1 WHERE id = ?',
+      [winning_number || null, drawId]
     );
 
     // Fetch bets for this draw
@@ -80,12 +80,14 @@ router.post('/draws/:id/close', ensureAdmin, async (req, res) => {
       if (draw.game_code === 'NUMBER') {
         if (bet.chosen_number !== null && winning_number && bet.chosen_number == winning_number) {
           status = 'WON';
-          payout = bet.amount * 10;
+          payout = bet.amount * 70;
         }
-      } else if (draw.game_code === 'COLOR') {
-        if (bet.chosen_color && winning_color && bet.chosen_color === winning_color) {
+      }
+      
+       if (draw.game_code === 'NUMBER50') {
+        if (bet.chosen_number !== null && winning_number && bet.chosen_number == winning_number) {
           status = 'WON';
-          payout = bet.amount * 2;
+          payout = bet.amount * 40;
         }
       }
 

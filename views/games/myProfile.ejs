@@ -48,127 +48,37 @@
     font-weight: 700;
 }
 
-.profile-info h4 {
-    font-weight: 700;
-}
-
-.profile-body {
-    padding: 30px;
-}
-
-.wallet-box {
-    background: rgba(255,255,255,0.06);
-    padding: 20px;
-    border-radius: 14px;
-    height: 100%;
-}
-
-.wallet-box .label {
-    font-size: 14px;
-    color: #bbb;
-}
-
 .balance {
     margin-top: 10px;
     font-size: 32px;
     font-weight: 800;
     color: #00e676;
 }
-
-.info-box {
-    background: rgba(255,255,255,0.06);
-    padding: 20px;
-    border-radius: 14px;
-    height: 100%;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 15px;
-}
-
-.actions {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.actions .btn {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 12px;
-    font-weight: 600;
-}
 </style>
 
 <div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-xl-8 col-lg-10 col-md-12">
-
-      <div class="profile-card">
-        <!-- Header -->
-        <div class="profile-header">
-          <div class="avatar">
-            <span><%= user.name.charAt(0).toUpperCase() %></span>
-          </div>
-          <div class="profile-info">
-            <h4 class="mb-1"><%= user.name %></h4>
-            <p class="text-muted mb-0"><%= user.email %></p>
-            <% if (user.is_admin) { %>
-              <span class="badge bg-warning text-dark mt-2">Admin</span>
-            <% } %>
-          </div>
-        </div>
-
-        <!-- Body -->
-        <div class="profile-body">
-          <div class="row g-4">
-
-            <!-- Wallet -->
-            <div class="col-md-6">
-              <div class="wallet-box">
-                <span class="label">Wallet Balance</span>
-                <h2 class="balance">
-                  <i class="bi bi-currency-dollar"></i>
-                  <%= user.balance %>
-                </h2>
-              </div>
-            </div>
-
-            <!-- Account Info -->
-            <div class="col-md-6">
-              <div class="info-box">
-                <div class="info-row">
-                  <span>User ID</span>
-                  <strong>#<%= user.id %></strong>
-                </div>
-                <div class="info-row">
-                  <span>Account Created</span>
-                  <strong>
-                    <%= new Date(user.created_at).toLocaleDateString() %>
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Actions -->
-          <div class="actions mt-4">
-            <button class="btn btn-success btn-lg" onclick="openRechargeModal()">
-              <i class="bi bi-wallet2"></i> Recharge Wallet
-            </button>
-
-            <button class="btn btn-outline-danger btn-lg" onclick="openWithdrawModal()">
-              <i class="bi bi-arrow-down-circle"></i> Withdraw Money
-            </button>
-          </div>
-
-        </div>
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="avatar">
+        <span><%= user.name.charAt(0).toUpperCase() %></span>
       </div>
+      <div>
+        <h4><%= user.name %></h4>
+        <p class="text-muted"><%= user.email %></p>
+        <% if (user.is_admin) { %>
+          <span class="badge bg-warning text-dark">Admin</span>
+        <% } %>
+      </div>
+    </div>
 
+    <div class="p-4">
+      <h5>Wallet Balance</h5>
+      <h2 class="balance">$<%= user.balance %></h2>
+
+      <div class="mt-4">
+        <button class="btn btn-success" onclick="openRechargeModal()">Recharge Wallet</button>
+        <button class="btn btn-danger" onclick="openWithdrawModal()">Withdraw Money</button>
+      </div>
     </div>
   </div>
 </div>
@@ -188,37 +98,54 @@
       <div class="modal-body">
         <form id="rechargeForm">
 
-          <!-- Amount -->
           <div class="mb-3">
             <label class="form-label">Amount</label>
-            <input type="number"
-                   class="form-control"
-                   name="amount"
-                   min="10"
-                   placeholder="Enter amount"
-                   required>
+            <input type="number" class="form-control" name="amount" min="10" placeholder="Enter amount" required>
             <small class="text-muted">Minimum recharge: 10</small>
           </div>
 
-          <!-- Payment Method -->
           <div class="mb-3">
             <label class="form-label">Payment Method</label>
-            <select class="form-select bg-dark text-light border-secondary" required>
+            <select id="paymentMethod" class="form-select bg-dark text-light border-secondary" required>
               <option value="">Select method</option>
-              <option>UPI</option>
-              <option>Credit / Debit Card</option>
-              <option>Crypto (USDT)</option>
+              <option value="upi">UPI</option>
+              <option value="card">Credit / Debit Card</option>
+              <option value="crypto">Crypto (USDT)</option>
             </select>
           </div>
 
-          <!-- Info -->
-          <div class="alert alert-secondary small">
-            Funds will be added instantly after successful payment.
+          <div id="cryptoSection" style="display:none">
+
+            <div class="alert alert-warning small mt-3">
+              IMPORTANT: Send USDT in BEP-20 network only.<br>
+              Depositing to any other network may result in permanent loss of assets.
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">BEP-20 Deposit Address</label>
+              <input type="text" id="bep20Address" class="form-control text-warning" readonly>
+            </div>
+
+            <div class="mb-3 text-center">
+              <img id="qrCode" style="max-width:200px;">
+            </div>
+
+            <div class="alert alert-secondary small">
+              Monitoring this address for 20 minutes.<br>
+              Status: <span id="depositStatus">Waiting for payment...</span>
+            </div>
+
+            <div class="alert alert-danger small">
+              NOTE: Only deposit to BEP-20 network.<br>
+              Otherwise assets may be permanently lost.
+            </div>
+
           </div>
 
-          <button type="submit" class="btn btn-success w-100">
+          <button id="payButton" type="submit" class="btn btn-success w-100">
             Proceed to Pay
           </button>
+
         </form>
       </div>
 
@@ -241,46 +168,38 @@
       <div class="modal-body">
         <form id="withdrawForm">
 
-          <!-- Available Balance -->
           <div class="mb-3">
             <label class="form-label">Available Balance</label>
-            <input type="text"
-                   class="form-control"
-                   value="<%= user.balance %>"
-                   disabled>
+            <input type="text" class="form-control" value="<%= user.balance %>" disabled>
           </div>
 
-          <!-- Withdraw Amount -->
           <div class="mb-3">
             <label class="form-label">Withdraw Amount</label>
-            <input type="number"
-                   class="form-control"
-                   name="amount"
-                   min="10"
-                   max="<%= user.balance %>"
-                   placeholder="Enter amount"
-                   required>
+            <input type="number" class="form-control" name="amount" min="10" max="<%= user.balance %>" placeholder="Enter amount" required>
           </div>
 
-          <!-- Destination -->
           <div class="mb-3">
             <label class="form-label">Withdraw To</label>
-            <select class="form-select bg-dark text-light border-secondary" required>
+            <select id="withdrawMethod" class="form-select bg-dark text-light border-secondary" required>
               <option value="">Select destination</option>
-              <option>Bank Account</option>
-              <option>UPI</option>
-              <option>Crypto Wallet (USDT)</option>
+              <option value="bank">Bank Account</option>
+              <option value="upi">UPI</option>
+              <option value="crypto">Crypto Wallet (USDT)</option>
             </select>
           </div>
 
-          <!-- Warning -->
-          <div class="alert alert-warning small">
-            Withdrawals may take up to 24 hours for processing.
+          <div id="withdrawCryptoSection" style="display:none">
+            <label class="form-label mt-2">Enter BEP-20 Wallet Address</label>
+            <input type="text" id="withdrawWallet" name="wallet_address" class="form-control" placeholder="Enter USDT BEP-20 wallet" required>
+            <div class="alert alert-warning small mt-2">
+              Only BEP-20 network wallet address allowed.
+            </div>
           </div>
 
-          <button type="submit" class="btn btn-danger w-100">
+          <button type="submit" class="btn btn-danger w-100 mt-3">
             Request Withdrawal
           </button>
+
         </form>
       </div>
 
@@ -299,5 +218,72 @@ function openWithdrawModal() {
   const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
   modal.show();
 }
-</script>
 
+document.getElementById('paymentMethod').addEventListener('change', async function() {
+
+  const amount = document.querySelector('#rechargeForm input[name="amount"]').value;
+
+  if (this.value === 'crypto') {
+
+    document.getElementById('cryptoSection').style.display = 'block';
+    document.getElementById('payButton').style.display = 'none';
+
+    const res = await fetch('/wallet/generate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({amount})
+    });
+
+    const data = await res.json();
+
+    document.getElementById('bep20Address').value = data.address;
+    document.getElementById('qrCode').src = data.qr;
+
+    startMonitoring(data.address, amount);
+
+  } else {
+
+    document.getElementById('cryptoSection').style.display = 'none';
+    document.getElementById('payButton').style.display = 'block';
+  }
+
+});
+
+
+document.getElementById('withdrawMethod').addEventListener('change', function() {
+
+  if (this.value === 'crypto') {
+    document.getElementById('withdrawCryptoSection').style.display = 'block';
+  } else {
+    document.getElementById('withdrawCryptoSection').style.display = 'none';
+  }
+
+});
+
+
+async function startMonitoring(address, expectedAmount) {
+
+  let elapsed = 0;
+
+  const interval = setInterval(async ()=> {
+
+    elapsed += 10;
+
+    const response = await fetch('/wallet/check', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({address,expectedAmount})
+    });
+
+    const data = await response.json();
+
+    document.getElementById('depositStatus').innerText = data.status;
+
+    if (data.status === 'confirmed' || elapsed >= 1200) {
+      clearInterval(interval);
+    }
+
+  },10000);
+
+}
+</script>

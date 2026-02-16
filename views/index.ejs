@@ -256,7 +256,7 @@
             </ul>
 
             <div class="d-flex gap-2">
-              <a href="#" onclick="openComingSoon()" class="btn btn-warning flex-grow-1">Start Game</a>
+              <a href="/play/color" class="btn btn-warning flex-grow-1">Start Game</a>
               <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#rulesModal3"
                 data-title="Color Game Rules">View Rules</button>
             </div>
@@ -607,16 +607,18 @@
   <script>
     // When a rules button opens the modal, populate it from data- attributes
     const rulesModal = document.getElementById('rulesModal');
-    rulesModal.addEventListener('show.bs.modal', function (event) {
-      const button = event.relatedTarget; // Button that triggered the modal
-      const title = button.getAttribute('data-title') || 'Rules';
-      const body = button.getAttribute('data-body') || '';
-      const startHref = button.getAttribute('data-start') || '#';
+    if (rulesModal) {
+      rulesModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const title = button.getAttribute('data-title') || 'Rules';
+        const body = button.getAttribute('data-body') || '';
+        const startHref = button.getAttribute('data-start') || '#';
 
-      document.getElementById('rulesModalLabel').innerText = title;
-      document.getElementById('rulesModalBody').innerHTML = '<p class="small">' + body + '</p>';
-      document.getElementById('rulesStartBtn').setAttribute('href', startHref);
-    });
+        document.getElementById('rulesModalLabel').innerText = title;
+        document.getElementById('rulesModalBody').innerHTML = '<p class="small">' + body + '</p>';
+        document.getElementById('rulesStartBtn').setAttribute('href', startHref);
+      });
+    }
 
     // Optional: add tiny animation for cards when page loads
     document.addEventListener('DOMContentLoaded', function () {

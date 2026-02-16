@@ -1,165 +1,275 @@
 const express = require('express');
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 const { ensureAdmin } = require('../middleware/auth');
+const { GAME_CONFIG, ALLOWED_COLORS } = require('../lib/gameConfig');
 
 const router = express.Router();
 
-// Admin dashboard
+function toInt(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
 router.get('/', ensureAdmin, async (req, res) => {
-  const [[{ userCount }]] = await db.query('SELECT COUNT(*) AS userCount FROM users');
-  const [[{ betCount }]] = await db.query('SELECT COUNT(*) AS betCount FROM bets');
+  const [userCount, betCount] = await Promise.all([prisma.user.count(), prisma.bet.count()]);
   res.render('admin/dashboard', { title: 'Admin Dashboard', userCount, betCount });
 });
 
-// List draws
 router.get('/draws', ensureAdmin, async (req, res) => {
-  const [rows] = await db.query(
-    `SELECT d.*, gt.name AS game_name, gt.code
-     FROM draws d
-     JOIN game_types gt ON d.game_type_id = gt.id
-     ORDER BY d.draw_time DESC`
-  );
-  res.render('admin/draws', { title: 'Manage Draws', draws: rows });
+  const page = Math.max(toInt(req.query.page) || 1, 1);
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  const [total, draws] = await Promise.all([
+    prisma.draw.count(),
+    prisma.draw.findMany({
+      include: { gameType: true },
+      orderBy: { drawTime: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+  ]);
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+  const rows = draws.map((d) => ({
+    id: d.id,
+    draw_code: d.drawCode,
+    game_type_id: d.gameTypeId,
+    draw_time: d.drawTime,
+    winning_number: d.winningNumber,
+    winning_color: d.winningColor,
+    is_closed: d.isClosed,
+    game_name: d.gameType.name,
+    code: d.gameType.code,
+  }));
+
+  res.render('admin/draws', {
+    title: 'Manage Draws',
+    draws: rows,
+    currentPage: page,
+    totalPages,
+  });
 });
 
-// Create draw
 router.post('/draws', ensureAdmin, async (req, res) => {
   const { game_type_code, draw_time } = req.body;
 
   try {
-    const [gtRows] = await db.query(
-      'SELECT id FROM game_types WHERE code = ?',
-      [game_type_code]
-    );
+    const gameConfig = GAME_CONFIG[game_type_code];
+    if (!gameConfig) {
+      req.flash('error', 'Unsupported game type.');
+      return res.redirect('/admin/draws');
+    }
 
-    if (!gtRows.length) {
+    const drawTime = new Date(draw_time);
+    if (Number.isNaN(drawTime.getTime())) {
+      req.flash('error', 'Invalid draw time.');
+      return res.redirect('/admin/draws');
+    }
+
+    const gameType = await prisma.gameType.findUnique({
+      where: { code: game_type_code },
+      select: { id: true },
+    });
+
+    if (!gameType) {
       req.flash('error', 'Invalid game type.');
       return res.redirect('/admin/draws');
     }
 
-    const gameTypeId = gtRows[0].id;
+    const drawCode = await prisma.$transaction(async (tx) => {
+      const lastDraw = await tx.draw.findFirst({
+        where: {
+          gameTypeId: gameType.id,
+          drawCode: { startsWith: gameConfig.drawPrefix },
+        },
+        orderBy: { id: 'desc' },
+        select: { drawCode: true },
+      });
 
-    // 1️⃣ Define prefixes & starting numbers
-    const gameConfig = {
-      NUMBER: { prefix: 'SP-', start: 1001 },
-      NUMBER50: { prefix: 'MD-', start: 4001 },
-      COLOR: { prefix: 'CL-', start: 7001 }
-    };
+      let nextNumber = gameConfig.drawStart;
+      if (lastDraw?.drawCode) {
+        const lastNumber = Number.parseInt(lastDraw.drawCode.replace(gameConfig.drawPrefix, ''), 10);
+        if (Number.isInteger(lastNumber)) {
+          nextNumber = lastNumber + 1;
+        }
+      }
 
-    const config = gameConfig[game_type_code];
-    if (!config) {
-      throw new Error('Unsupported game type');
-    }
+      const nextDrawCode = `${gameConfig.drawPrefix}${nextNumber}`;
 
-    // 2️⃣ Get last draw code for this game
-    const [lastDrawRows] = await db.query(
-      `
-      SELECT draw_code
-      FROM draws
-      WHERE game_type_id = ?
-        AND draw_code LIKE ?
-      ORDER BY id DESC
-      LIMIT 1
-      `,
-      [gameTypeId, `${config.prefix}%`]
-    );
+      await tx.draw.create({
+        data: {
+          gameTypeId: gameType.id,
+          drawTime,
+          drawCode: nextDrawCode,
+        },
+      });
 
-    let nextNumber;
-
-    if (lastDrawRows.length) {
-      const lastCode = lastDrawRows[0].draw_code; // e.g. SP-1005
-      const lastNumber = parseInt(lastCode.replace(config.prefix, ''), 10);
-      nextNumber = lastNumber + 1;
-    } else {
-      nextNumber = config.start;
-    }
-
-    const drawCode = `${config.prefix}${nextNumber}`;
-
-    // 3️⃣ Insert draw
-    await db.query(
-      `
-      INSERT INTO draws (game_type_id, draw_time, draw_code)
-      VALUES (?, ?, ?)
-      `,
-      [gameTypeId, draw_time, drawCode]
-    );
+      return nextDrawCode;
+    });
 
     req.flash('success', `Draw created (${drawCode}).`);
-    res.redirect('/admin/draws');
-
+    return res.redirect('/admin/draws');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Error creating draw.');
-    res.redirect('/admin/draws');
+    return res.redirect('/admin/draws');
   }
 });
 
-// Declare result (announce winner)
 router.post('/draws/:id/close', ensureAdmin, async (req, res) => {
-  const drawId = req.params.id;
-  const { winning_number } = req.body;
+  const drawId = toInt(req.params.id);
+  const winningNumberInput = toInt(req.body.winning_number);
+  const winningColorInput = String(req.body.winning_color || '').toUpperCase();
+
+  if (!drawId) {
+    req.flash('error', 'Invalid draw id.');
+    return res.redirect('/admin/draws');
+  }
 
   try {
-    // Get draw & game type
-    const [d] = await db.query(
-      `SELECT d.*, gt.code AS game_code
-       FROM draws d
-       JOIN game_types gt ON d.game_type_id = gt.id
-       WHERE d.id = ?`,
-      [drawId]
-    );
-    if (!d.length) {
-      req.flash('error', 'Draw not found.');
-      return res.redirect('/admin/draws');
-    }
-    const draw = d[0];
+    await prisma.$transaction(async (tx) => {
+      const draw = await tx.draw.findUnique({
+        where: { id: drawId },
+        include: { gameType: true },
+      });
 
-    // Update draw with result
-    await db.query(
-      'UPDATE draws SET winning_number = ?, is_closed = 1 WHERE id = ?',
-      [winning_number || null, drawId]
-    );
+      if (!draw) {
+        throw new Error('DRAW_NOT_FOUND');
+      }
 
-    // Fetch bets for this draw
-    const [bets] = await db.query('SELECT * FROM bets WHERE draw_id = ?', [drawId]);
+      if (draw.isClosed) {
+        throw new Error('DRAW_ALREADY_CLOSED');
+      }
 
-    for (const bet of bets) {
-      let status = 'LOST';
-      let payout = 0;
+      const gameCode = draw.gameType.code;
+      const gameConfig = GAME_CONFIG[gameCode];
+      if (!gameConfig) {
+        throw new Error('UNSUPPORTED_GAME');
+      }
 
-      if (draw.game_code === 'NUMBER') {
-        if (bet.chosen_number !== null && winning_number && bet.chosen_number == winning_number) {
-          status = 'WON';
-          payout = bet.amount * 70;
+      let winningNumber = null;
+      let winningColor = null;
+
+      if (gameCode === 'NUMBER' || gameCode === 'NUMBER50') {
+        if (!winningNumberInput) {
+          throw new Error('INVALID_WINNING_NUMBER');
+        }
+
+        if (winningNumberInput < gameConfig.minChoice || winningNumberInput > gameConfig.maxChoice) {
+          throw new Error('INVALID_WINNING_NUMBER');
+        }
+
+        winningNumber = winningNumberInput;
+      }
+
+      if (gameCode === 'COLOR') {
+        if (!ALLOWED_COLORS.includes(winningColorInput)) {
+          throw new Error('INVALID_WINNING_COLOR');
+        }
+        winningColor = winningColorInput;
+      }
+
+      await tx.draw.update({
+        where: { id: drawId },
+        data: {
+          winningNumber,
+          winningColor,
+          isClosed: true,
+        },
+      });
+
+      const bets = await tx.bet.findMany({ where: { drawId } });
+
+      for (const bet of bets) {
+        let status = 'LOST';
+        let payout = 0;
+
+        if (gameCode === 'NUMBER' || gameCode === 'NUMBER50') {
+          if (bet.chosenNumber !== null && bet.chosenNumber === winningNumber) {
+            status = 'WON';
+            payout = Number(bet.amount) * gameConfig.multiplier;
+          }
+        } else if (gameCode === 'COLOR') {
+          if (bet.chosenColor && bet.chosenColor === winningColor) {
+            status = 'WON';
+            payout = Number(bet.amount) * gameConfig.multiplier;
+          }
+        }
+
+        await tx.bet.update({
+          where: { id: bet.id },
+          data: {
+            status,
+            payout,
+          },
+        });
+
+        if (status === 'WON' && payout > 0) {
+          await tx.user.update({
+            where: { id: bet.userId },
+            data: { balance: { increment: payout } },
+          });
         }
       }
-      
-       if (draw.game_code === 'NUMBER50') {
-        if (bet.chosen_number !== null && winning_number && bet.chosen_number == winning_number) {
-          status = 'WON';
-          payout = bet.amount * 40;
-        }
-      }
-
-      await db.query(
-        'UPDATE bets SET status = ?, payout = ? WHERE id = ?',
-        [status, payout, bet.id]
-      );
-
-      if (status === 'WON' && payout > 0) {
-        await db.query('UPDATE users SET balance = balance + ? WHERE id = ?', [
-          payout,
-          bet.user_id,
-        ]);
-      }
-    }
+    });
 
     req.flash('success', 'Result declared and winners updated!');
-    res.redirect('/admin/draws');
+    return res.redirect('/admin/draws');
+  } catch (err) {
+    if (err.message === 'DRAW_NOT_FOUND') {
+      req.flash('error', 'Draw not found.');
+    } else if (err.message === 'DRAW_ALREADY_CLOSED') {
+      req.flash('error', 'Draw is already closed.');
+    } else if (err.message === 'INVALID_WINNING_NUMBER') {
+      req.flash('error', 'Invalid winning number for this game.');
+    } else if (err.message === 'INVALID_WINNING_COLOR') {
+      req.flash('error', 'Invalid winning color for this game.');
+    } else {
+      console.error(err);
+      req.flash('error', 'Error closing draw.');
+    }
+    return res.redirect('/admin/draws');
+  }
+});
+
+router.get('/bets/:drawId', ensureAdmin, async (req, res) => {
+  const drawId = toInt(req.params.drawId);
+
+  if (!drawId) {
+    req.flash('error', 'Invalid draw id.');
+    return res.redirect('/admin/draws');
+  }
+
+  try {
+    const bets = await prisma.bet.findMany({
+      where: { drawId },
+      include: {
+        user: { select: { name: true } },
+        draw: { select: { drawCode: true } },
+      },
+      orderBy: { placedAt: 'desc' },
+    });
+
+    const rows = bets.map((bet) => ({
+      id: bet.id,
+      user_id: bet.userId,
+      username: bet.user?.name || 'Unknown',
+      draw_id: bet.drawId,
+      draw_code: bet.draw?.drawCode || null,
+      amount: Number(bet.amount),
+      chosen_number: bet.chosenNumber,
+      chosen_color: bet.chosenColor,
+      status: bet.status,
+      payout: Number(bet.payout),
+      placed_at: bet.placedAt,
+    }));
+
+    res.render('admin/bets', { title: 'View Bets', bets: rows });
   } catch (err) {
     console.error(err);
-    req.flash('error', 'Error closing draw.');
+    req.flash('error', 'Error fetching bets.');
     res.redirect('/admin/draws');
   }
 });

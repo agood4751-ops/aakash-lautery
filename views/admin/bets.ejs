@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+
+    <!-- Bootstrap CSS (if not already included globally) -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+</head>
+<body>
+
+<div class="container mt-4">
+    <h3 class="mb-4">Bets for Draw</h3>
+
+    <% if (!bets || bets.length === 0) { %>
+        <div class="alert alert-warning">
+            No bets found for this draw.
+        </div>
+    <% } else { %>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Draw ID</th>
+                        <th>Draw Code</th>
+                        <th>Amount</th>
+                        <th>Chosen Number</th>
+                        <th>Chosen Color</th>
+                        <th>Status</th>
+                        <th>Payout</th>
+                        <th>Placed At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% bets.forEach((bet, index) => { %>
+                        <tr>
+                            <td><%= index + 1 %></td>
+                            <td><%= bet.username %></td>
+                            <td><%= bet.draw_id %></td>
+                            <td><%= bet.draw_code || '-' %></td>
+                            <td>₹ <%= bet.amount %></td>
+                            <td><%= bet.chosen_number ?? '-' %></td>
+                            <td><%= bet.chosen_color ?? '-' %></td>
+
+                            <td>
+                                <% if (bet.status === 'WON') { %>
+                                    <span class="badge bg-success">WON</span>
+                                <% } else if (bet.status === 'LOST') { %>
+                                    <span class="badge bg-danger">LOST</span>
+                                <% } else { %>
+                                    <span class="badge bg-warning text-dark">PENDING</span>
+                                <% } %>
+                            </td>
+
+                            <td>₹ <%= bet.payout %></td>
+
+                            <td>
+                                <%= new Date(bet.placed_at).toLocaleString('en-IN') %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+    <% } %>
+
+    <a href="/admin/draws" class="btn btn-secondary mt-3">
+        ← Back to Draws
+    </a>
+</div>
+
+</body>
+</html>

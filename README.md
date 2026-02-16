@@ -1,11 +1,11 @@
-Steps to setup project:
+Setup steps:
 
-1. https://github.com/Faizatgit/Lottery-App.git
-2. cd Lottery-App
-3. npm install or npm i
-4. npm run dev or node app.js
+1. npm install
+2. Set your Neon URL in `.env` as `DATABASE_URL`
+3. Run Prisma schema sync: `npm run prisma:push`
+4. Seed game types: `npm run seed`
+5. Start app: `npm run dev`
 
-Prerequisites :
-1. Insall nodejs version => v21.7.3 or any latest LTS version.
-2. Setup database => Preferred MySql
-3. Database setup comming soon
+Notes:
+- Database provider is now PostgreSQL (Neon compatible).
+- Session storage is PostgreSQL (`connect-pg-simple`) using table `user_sessions`.

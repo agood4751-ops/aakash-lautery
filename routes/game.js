@@ -1,152 +1,236 @@
 const express = require('express');
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 const { ensureAuth } = require('../middleware/auth');
+const { GAME_CONFIG, ALLOWED_COLORS } = require('../lib/gameConfig');
 
 const router = express.Router();
 
-// Number game page
+function toInt(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function toAmount(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+async function getOpenDrawByCode(code) {
+  const draw = await prisma.draw.findFirst({
+    where: {
+      isClosed: false,
+      gameType: { code },
+    },
+    include: { gameType: true },
+    orderBy: { drawTime: 'asc' },
+  });
+
+  if (!draw) return null;
+
+  return {
+    id: draw.id,
+    draw_time: draw.drawTime,
+    draw_code: draw.drawCode,
+    game_type_id: draw.gameTypeId,
+    game_name: draw.gameType.name,
+    code: draw.gameType.code,
+  };
+}
+
 router.get('/play/number', ensureAuth, async (req, res) => {
-  // get open draw for NUMBER
-  const [rows] = await db.query(
-    `SELECT d.*, gt.name AS game_name
-     FROM draws d
-     JOIN game_types gt ON d.game_type_id = gt.id
-     WHERE gt.code = 'NUMBER' AND d.is_closed = 0
-     ORDER BY d.draw_time ASC
-     LIMIT 1`
-  );
-  const draw = rows[0] || null;
+  const draw = await getOpenDrawByCode('NUMBER');
   res.render('games/number', { title: 'Play Number Game', draw });
 });
 
-// Place number bet
 router.post('/play/number', ensureAuth, async (req, res) => {
   const { chosen_number, draw_id, amount } = req.body;
   const userId = req.session.user.id;
+  const config = GAME_CONFIG.NUMBER;
 
   try {
-    const betAmount = parseInt(amount);
+    const chosenNumber = toInt(chosen_number);
+    const drawId = toInt(draw_id);
+    const betAmount = toInt(amount);
 
-    // 1️⃣ Validation
-    if (!Number.isInteger(betAmount) || betAmount < 1 || betAmount > 100) {
-      req.flash('error', 'Amount must be between 1 and 100.');
+    if (!drawId || !chosenNumber) {
+      req.flash('error', 'Draw and number are required.');
       return res.redirect('/play/number');
     }
 
-    if (chosen_number < 1 || chosen_number > 100) {
-      req.flash('error', 'Choose a number between 1 and 100.');
+    if (!betAmount || betAmount < config.minAmount || betAmount > config.maxAmount) {
+      req.flash('error', `Amount must be between ${config.minAmount} and ${config.maxAmount}.`);
       return res.redirect('/play/number');
     }
 
-    // 2️⃣ User balance
-    const [[user]] = await db.query(
-      'SELECT balance FROM users WHERE id = ?',
-      [userId]
-    );
-
-    if (user.balance < betAmount) {
-      req.flash('error', 'Insufficient balance.');
+    if (chosenNumber < config.minChoice || chosenNumber > config.maxChoice) {
+      req.flash('error', `Choose a number between ${config.minChoice} and ${config.maxChoice}.`);
       return res.redirect('/play/number');
     }
 
-    // 3️⃣ User ticket limit
-    const [[userTicketData]] = await db.query(
-      `SELECT COUNT(*) AS count
-       FROM bets
-       WHERE user_id = ? AND draw_id = ?`,
-      [userId, draw_id]
-    );
+    const payout = betAmount * config.multiplier;
 
-    if (userTicketData.count >= 5) {
-      req.flash('error', 'You can buy max 5 tickets per draw.');
-      return res.redirect('/play/number');
-    }
+    await prisma.$transaction(async (tx) => {
+      const draw = await tx.draw.findFirst({
+        where: { id: drawId, isClosed: false, gameType: { code: config.code } },
+      });
 
-    // 4️⃣ Draw ticket limit
-    const [[drawTicketData]] = await db.query(
-      `SELECT COUNT(*) AS count
-       FROM bets
-       WHERE draw_id = ?`,
-      [draw_id]
-    );
+      if (!draw) {
+        throw new Error('DRAW_NOT_OPEN');
+      }
 
-    if (drawTicketData.count >= 80) {
-      req.flash('error', 'All tickets sold for this draw.');
-      return res.redirect('/play/number');
-    }
+      const [userTicketCount, drawTicketCount] = await Promise.all([
+        tx.bet.count({ where: { userId, drawId } }),
+        tx.bet.count({ where: { drawId } }),
+      ]);
 
-    // 5️⃣ Insert tickets
-    const payout = betAmount * 70;
-    await db.query(
-      `INSERT INTO bets
-      (user_id, draw_id, amount, chosen_number, status, payout, game_type_id)
-      VALUES (?, ?, ?, ?, 'PENDING', ?, 1)`,
-      [userId, draw_id, betAmount, chosen_number, payout]
-    );
+      if (userTicketCount >= config.perUserLimit) {
+        throw new Error('USER_LIMIT_REACHED');
+      }
 
-    // 6️⃣ Deduct balance
-    await db.query(
-      'UPDATE users SET balance = balance - ? WHERE id = ?',
-      [betAmount, userId]
-    );
+      if (drawTicketCount >= config.drawLimit) {
+        throw new Error('DRAW_SOLD_OUT');
+      }
 
-    req.flash(
-      'success',
-      `Bet placed! 1 ticket(s) purchased. Win amount per ticket: AED ${payout}`
-    );
-    res.redirect('/play/number');
+      const debitResult = await tx.user.updateMany({
+        where: {
+          id: userId,
+          balance: { gte: betAmount },
+        },
+        data: {
+          balance: { decrement: betAmount },
+        },
+      });
 
+      if (debitResult.count !== 1) {
+        throw new Error('INSUFFICIENT_BALANCE');
+      }
+
+      await tx.bet.create({
+        data: {
+          userId,
+          drawId,
+          amount: betAmount,
+          chosenNumber,
+          status: 'PENDING',
+          payout,
+          gameTypeId: draw.gameTypeId,
+        },
+      });
+    });
+
+    req.session.user.balance = Number(req.session.user.balance || 0) - betAmount;
+    req.flash('success', `Bet placed! Win amount per ticket: AED ${payout}`);
+    return res.redirect('/play/number');
   } catch (err) {
-    console.error(err);
-    req.flash('error', 'Something went wrong.');
-    res.redirect('/play/number');
+    if (err.message === 'DRAW_NOT_OPEN') {
+      req.flash('error', 'This draw is closed or invalid.');
+    } else if (err.message === 'USER_LIMIT_REACHED') {
+      req.flash('error', 'You can buy max 5 tickets per draw.');
+    } else if (err.message === 'DRAW_SOLD_OUT') {
+      req.flash('error', 'All tickets sold for this draw.');
+    } else if (err.message === 'INSUFFICIENT_BALANCE') {
+      req.flash('error', 'Insufficient balance.');
+    } else {
+      console.error(err);
+      req.flash('error', 'Something went wrong.');
+    }
+    return res.redirect('/play/number');
   }
 });
 
-
-
-// Color game page
 router.get('/play/color', ensureAuth, async (req, res) => {
-  const [rows] = await db.query(
-    `SELECT d.*, gt.name AS game_name
-     FROM draws d
-     JOIN game_types gt ON d.game_type_id = gt.id
-     WHERE gt.code = 'COLOR' AND d.is_closed = 0
-     ORDER BY d.draw_time ASC
-     LIMIT 1`
-  );
-  const draw = rows[0] || null;
+  const draw = await getOpenDrawByCode('COLOR');
   res.render('games/color', { title: 'Play Color Game', draw });
 });
 
-// Place color bet
 router.post('/play/color', ensureAuth, async (req, res) => {
   const { chosen_color, amount, draw_id } = req.body;
   const userId = req.session.user.id;
+  const config = GAME_CONFIG.COLOR;
 
   try {
-    const [users] = await db.query('SELECT balance FROM users WHERE id = ?', [userId]);
-    const balance = parseFloat(users[0].balance);
-    const betAmount = parseFloat(amount);
+    const drawId = toInt(draw_id);
+    const betAmount = toAmount(amount);
+    const chosenColor = String(chosen_color || '').toUpperCase();
 
-    if (betAmount <= 0 || betAmount > balance) {
-      req.flash('error', 'Invalid amount or insufficient balance.');
+    if (!drawId || !betAmount || !ALLOWED_COLORS.includes(chosenColor)) {
+      req.flash('error', 'Invalid draw, amount or color.');
       return res.redirect('/play/color');
     }
 
-    await db.query(
-      'INSERT INTO bets (user_id, draw_id, amount, chosen_color) VALUES (?, ?, ?, ?)',
-      [userId, draw_id, betAmount, chosen_color]
-    );
+    if (betAmount < config.minAmount || betAmount > config.maxAmount) {
+      req.flash('error', `Amount must be between ${config.minAmount} and ${config.maxAmount}.`);
+      return res.redirect('/play/color');
+    }
 
-    await db.query('UPDATE users SET balance = balance - ? WHERE id = ?', [betAmount, userId]);
+    const payout = Number((betAmount * config.multiplier).toFixed(2));
 
-    req.flash('success', 'Bet placed successfully!');
-    res.redirect('/play/color');
+    await prisma.$transaction(async (tx) => {
+      const draw = await tx.draw.findFirst({
+        where: { id: drawId, isClosed: false, gameType: { code: config.code } },
+      });
+
+      if (!draw) {
+        throw new Error('DRAW_NOT_OPEN');
+      }
+
+      const [userTicketCount, drawTicketCount] = await Promise.all([
+        tx.bet.count({ where: { userId, drawId } }),
+        tx.bet.count({ where: { drawId } }),
+      ]);
+
+      if (userTicketCount >= config.perUserLimit) {
+        throw new Error('USER_LIMIT_REACHED');
+      }
+
+      if (drawTicketCount >= config.drawLimit) {
+        throw new Error('DRAW_SOLD_OUT');
+      }
+
+      const debitResult = await tx.user.updateMany({
+        where: {
+          id: userId,
+          balance: { gte: betAmount },
+        },
+        data: {
+          balance: { decrement: betAmount },
+        },
+      });
+
+      if (debitResult.count !== 1) {
+        throw new Error('INSUFFICIENT_BALANCE');
+      }
+
+      await tx.bet.create({
+        data: {
+          userId,
+          drawId,
+          amount: betAmount,
+          chosenColor,
+          status: 'PENDING',
+          payout,
+          gameTypeId: draw.gameTypeId,
+        },
+      });
+    });
+
+    req.session.user.balance = Number(req.session.user.balance || 0) - betAmount;
+    req.flash('success', 'Color bet placed successfully!');
+    return res.redirect('/play/color');
   } catch (err) {
-    console.error(err);
-    req.flash('error', 'Something went wrong.');
-    res.redirect('/play/color');
+    if (err.message === 'DRAW_NOT_OPEN') {
+      req.flash('error', 'This draw is closed or invalid.');
+    } else if (err.message === 'USER_LIMIT_REACHED') {
+      req.flash('error', 'You can buy max 5 tickets per draw.');
+    } else if (err.message === 'DRAW_SOLD_OUT') {
+      req.flash('error', 'All tickets sold for this draw.');
+    } else if (err.message === 'INSUFFICIENT_BALANCE') {
+      req.flash('error', 'Insufficient balance.');
+    } else {
+      console.error(err);
+      req.flash('error', 'Something went wrong.');
+    }
+    return res.redirect('/play/color');
   }
 });
 
@@ -154,16 +238,34 @@ router.get('/play/myBets', ensureAuth, async (req, res) => {
   const userId = req.session.user.id;
 
   try {
-    const [bets] = await db.query(
-      `SELECT * FROM bets WHERE user_id = ? ORDER BY placed_at DESC`,
-      [userId]
-    );
+    const bets = await prisma.bet.findMany({
+      where: { userId },
+      orderBy: { placedAt: 'desc' },
+      include: {
+        draw: { select: { drawCode: true } },
+        gameType: { select: { code: true, name: true } },
+      },
+    });
+
+    const rows = bets.map((bet) => ({
+      id: bet.id,
+      draw_id: bet.drawId,
+      draw_code: bet.draw?.drawCode || null,
+      game_type_id: bet.gameTypeId,
+      game_code: bet.gameType?.code || null,
+      game_name: bet.gameType?.name || null,
+      chosen_number: bet.chosenNumber,
+      chosen_color: bet.chosenColor,
+      amount: Number(bet.amount),
+      status: bet.status,
+      payout: Number(bet.payout),
+      placed_at: bet.placedAt,
+    }));
 
     res.render('games/myBets', {
       title: 'My Bets',
-      bets
+      bets: rows,
     });
-
   } catch (err) {
     console.error(err);
     req.flash('error', 'Could not retrieve your bets.');
@@ -171,128 +273,136 @@ router.get('/play/myBets', ensureAuth, async (req, res) => {
   }
 });
 
-// Number game page
 router.get('/play/numberGame2', ensureAuth, async (req, res) => {
-  // get open draw for NUMBER
-  const [rows] = await db.query(
-    `SELECT d.*, gt.name AS game_name
-     FROM draws d
-     JOIN game_types gt ON d.game_type_id = gt.id
-     WHERE gt.code = 'NUMBER50' AND d.is_closed = 0
-     ORDER BY d.draw_time ASC
-     LIMIT 1`
-  );
-  const draw = rows[0] || null;
+  const draw = await getOpenDrawByCode('NUMBER50');
   res.render('games/numberGame2', { title: 'Play Number 50 Game', draw });
 });
 
 router.post('/play/numberGame2', ensureAuth, async (req, res) => {
   const { draw_id, chosen_number, amount } = req.body;
   const userId = req.session.user.id;
+  const config = GAME_CONFIG.NUMBER50;
 
   try {
-    const betAmount = parseInt(amount);
+    const drawId = toInt(draw_id);
+    const chosenNumber = toInt(chosen_number);
+    const betAmount = toInt(amount);
 
-    // 🔒 Validations
-    if (!Number.isInteger(betAmount) || betAmount < 2 || betAmount > 200) {
-      req.flash('error', 'Amount must be between AED 2 and 200.');
+    if (!drawId || !chosenNumber) {
+      req.flash('error', 'Draw and number are required.');
       return res.redirect('/play/numberGame2');
     }
 
-    if (chosen_number < 1 || chosen_number > 50) {
-      req.flash('error', 'Choose a number between 1 and 50.');
+    if (!betAmount || betAmount < config.minAmount || betAmount > config.maxAmount) {
+      req.flash('error', `Amount must be between ${config.minAmount} and ${config.maxAmount}.`);
       return res.redirect('/play/numberGame2');
     }
 
-    // 👤 User balance
-    const [[user]] = await db.query(
-      'SELECT balance FROM users WHERE id = ?',
-      [userId]
-    );
-
-    if (user.balance < betAmount) {
-      req.flash('error', 'Insufficient balance.');
+    if (chosenNumber < config.minChoice || chosenNumber > config.maxChoice) {
+      req.flash('error', `Choose a number between ${config.minChoice} and ${config.maxChoice}.`);
       return res.redirect('/play/numberGame2');
     }
 
-    // 🎟 User ticket limit
-    const [[userTickets]] = await db.query(
-      `SELECT COUNT(*) AS count
-       FROM bets WHERE user_id = ? AND draw_id = ?`,
-      [userId, draw_id]
-    );
+    const payout = betAmount * config.multiplier;
 
-    if (userTickets.count >= 5) {
-      req.flash('error', 'You can buy max 5 tickets per draw.');
-      return res.redirect('/play/numberGame2');
-    }
+    await prisma.$transaction(async (tx) => {
+      const draw = await tx.draw.findFirst({
+        where: { id: drawId, isClosed: false, gameType: { code: config.code } },
+      });
 
-    // 🎯 Draw ticket limit (40)
-    const [[drawTickets]] = await db.query(
-      `SELECT COUNT(*) AS count
-       FROM bets WHERE draw_id = ?`,
-      [draw_id]
-    );
+      if (!draw) {
+        throw new Error('DRAW_NOT_OPEN');
+      }
 
-    if (drawTickets.count >= 40) {
-      req.flash('error', 'All tickets sold for this draw.');
-      return res.redirect('/play/numberGame2');
-    }
+      const [userTicketCount, drawTicketCount] = await Promise.all([
+        tx.bet.count({ where: { userId, drawId } }),
+        tx.bet.count({ where: { drawId } }),
+      ]);
 
-    // 💰 Insert bets
-    const payout = betAmount * 40;
+      if (userTicketCount >= config.perUserLimit) {
+        throw new Error('USER_LIMIT_REACHED');
+      }
 
-    await db.query(
-        `INSERT INTO bets
-        (user_id, draw_id, amount, chosen_number, status, payout, game_type_id)
-        VALUES (?, ?, ?, ?, 'PENDING', ?, 3)`,
-        [userId, draw_id, betAmount, chosen_number, payout]
-      );
+      if (drawTicketCount >= config.drawLimit) {
+        throw new Error('DRAW_SOLD_OUT');
+      }
 
-    // 💳 Deduct balance
-    await db.query(
-      'UPDATE users SET balance = balance - ? WHERE id = ?',
-      [betAmount, userId]
-    );
+      const debitResult = await tx.user.updateMany({
+        where: {
+          id: userId,
+          balance: { gte: betAmount },
+        },
+        data: {
+          balance: { decrement: betAmount },
+        },
+      });
 
-    req.flash(
-      'success',
-      `Bet placed! 1 ticket(s). Win AED ${payout} per ticket.`
-    );
-    res.redirect('/play/numberGame2');
+      if (debitResult.count !== 1) {
+        throw new Error('INSUFFICIENT_BALANCE');
+      }
 
+      await tx.bet.create({
+        data: {
+          userId,
+          drawId,
+          amount: betAmount,
+          chosenNumber,
+          status: 'PENDING',
+          payout,
+          gameTypeId: draw.gameTypeId,
+        },
+      });
+    });
+
+    req.session.user.balance = Number(req.session.user.balance || 0) - betAmount;
+    req.flash('success', `Bet placed! Win AED ${payout} per ticket.`);
+    return res.redirect('/play/numberGame2');
   } catch (err) {
-    console.error(err);
-    req.flash('error', 'Something went wrong.');
-    res.redirect('/play/numberGame2');
+    if (err.message === 'DRAW_NOT_OPEN') {
+      req.flash('error', 'This draw is closed or invalid.');
+    } else if (err.message === 'USER_LIMIT_REACHED') {
+      req.flash('error', 'You can buy max 5 tickets per draw.');
+    } else if (err.message === 'DRAW_SOLD_OUT') {
+      req.flash('error', 'All tickets sold for this draw.');
+    } else if (err.message === 'INSUFFICIENT_BALANCE') {
+      req.flash('error', 'Insufficient balance.');
+    } else {
+      console.error(err);
+      req.flash('error', 'Something went wrong.');
+    }
+    return res.redirect('/play/numberGame2');
   }
 });
 
-router.get('/play/results', ensureAuth, async(req, res) => {
-    try {
-    const [results] = await db.query(
-      `SELECT 
-          d.id,
-          d.game_type_id,
-          d.draw_time,
-          d.winning_number,
-          g.code,
-          g.name
-      FROM draws AS d
-      LEFT JOIN game_types AS g ON d.game_type_id = g.id
-      WHERE d.winning_number > 0
-      LIMIT 0, 1000;`,
-    );
-    console.log(results);
+router.get('/play/results', ensureAuth, async (req, res) => {
+  try {
+    const results = await prisma.draw.findMany({
+      where: {
+        isClosed: true,
+        OR: [{ winningNumber: { not: null } }, { winningColor: { not: null } }],
+      },
+      include: { gameType: true },
+      orderBy: { drawTime: 'desc' },
+      take: 1000,
+    });
+
+    const rows = results.map((row) => ({
+      id: row.id,
+      game_type_id: row.gameTypeId,
+      draw_time: row.drawTime,
+      winning_number: row.winningNumber,
+      winning_color: row.winningColor,
+      code: row.gameType.code,
+      name: row.gameType.name,
+    }));
 
     res.render('games/results', {
       title: 'Results',
-      results
+      results: rows,
     });
-
   } catch (err) {
     console.error(err);
-    req.flash('error', 'Could not retrieve your bets.');
+    req.flash('error', 'Could not retrieve results.');
     res.redirect('/');
   }
 });
@@ -308,29 +418,40 @@ router.get('/play/rules', ensureAuth, (req, res) => {
 router.get('/play/myProfile', ensureAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const [rows] = await db.query(
-      "SELECT id, name, email, is_admin, balance, created_at FROM users WHERE id = ?",
-      [userId]
-    );
 
-    if (!rows.length) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isAdmin: true,
+        balance: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
       req.flash('error', 'User not found');
       return res.redirect('/');
     }
 
-    const user = rows[0];
-
     res.render('games/myProfile', {
       title: 'My Profile',
-      user
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        is_admin: user.isAdmin,
+        balance: Number(user.balance),
+        created_at: user.createdAt,
+      },
     });
-
   } catch (err) {
+    console.error(err);
     req.flash('error', 'Unable to load profile');
     res.redirect('/');
   }
 });
-
-
 
 module.exports = router;

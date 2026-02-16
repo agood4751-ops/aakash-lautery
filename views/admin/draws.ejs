@@ -32,6 +32,7 @@
   <thead>
     <tr>
       <th>ID</th>
+      <th>View Bets</th>
       <th>Draw Code</th>
       <th>Game</th>
       <th>Draw Time</th>
@@ -45,6 +46,14 @@
     <% draws.forEach(d => { %>
       <tr>
         <td><%= d.id %></td>
+        <td>
+          <a
+            href="/admin/bets/<%= d.id %>"
+            class="btn btn-sm btn-info"
+          >
+            View Bets
+          </a>
+        </td>
 
         <td><%= d.draw_code %></td>
 
@@ -135,3 +144,38 @@
     <% }) %>
   </tbody>
 </table>
+
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+
+    <!-- Previous -->
+    <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+      <a
+        class="page-link"
+        href="/admin/draws?page=<%= currentPage - 1 %>"
+      >
+        Previous
+      </a>
+    </li>
+
+    <!-- Page Numbers -->
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+        <a class="page-link" href="/admin/draws?page=<%= i %>">
+          <%= i %>
+        </a>
+      </li>
+    <% } %>
+
+    <!-- Next -->
+    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+      <a
+        class="page-link"
+        href="/admin/draws?page=<%= currentPage + 1 %>"
+      >
+        Next
+      </a>
+    </li>
+
+  </ul>
+</nav>

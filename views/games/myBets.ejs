@@ -32,24 +32,20 @@
                   <% bets.forEach((bet, index) => { %>
                     <tr>
                       <td><%= index + 1 %></td>
-                      <td><%= bet.draw_id %></td>
-                      <!-- Game Type -->
+                      <td><%= bet.draw_code || bet.draw_id %></td>
                       <td>
                         <span class="badge bg-info">
-                        <% if (bet.game_type_id == 1) { %>
-                          🎯 <strong>Sprint 70x</strong>
-                        <% } else if(bet.game_type_id == 3) { %>
-                          🎯 <strong>Mid-Day 40x</strong>
-                        <% } %>
+                          <strong><%= bet.game_name || bet.game_code || 'Unknown' %></strong>
                         </span>
                       </td>
 
-                      <!-- Choice -->
                       <td>
-                        <% if (bet.game_type_id == 1) { %>
+                        <% if (bet.game_code === 'NUMBER' || bet.game_code === 'NUMBER50') { %>
                           🎯 <strong><%= bet.chosen_number %></strong>
-                        <% } else if(bet.game_type_id == 3) { %>
-                          🎯 <strong><%= bet.chosen_number %></strong>
+                        <% } else if (bet.game_code === 'COLOR') { %>
+                          🎨 <strong><%= bet.chosen_color %></strong>
+                        <% } else { %>
+                          -
                         <% } %>
                       </td>
 

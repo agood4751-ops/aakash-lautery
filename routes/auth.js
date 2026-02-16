@@ -1,90 +1,103 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
 
-// Register
+function normalizePhone(countryCode, phone) {
+  const c = (countryCode || '').trim();
+  const p = (phone || '').replace(/\s+/g, '');
+  return c && p ? `${c}${p}` : null;
+}
+
 router.get('/register', (req, res) => {
   res.render('register', { title: 'Register' });
 });
 
 router.post('/register', async (req, res) => {
   const { name, email, country_code, phone, password, confirmPassword } = req.body;
-  const fullPhone = country_code + phone;
 
   try {
-    /* 1️⃣ Password confirmation (MANDATORY backend check) */
+    if (!name || !email || !country_code || !phone || !password || !confirmPassword) {
+      req.flash('error', 'All fields are required.');
+      return res.redirect('/register');
+    }
+
     if (password !== confirmPassword) {
       req.flash('error', 'Passwords do not match.');
       return res.redirect('/register');
     }
 
-    /* 2️⃣ Check email OR phone already exists */
-    const [existing] = await db.query(
-      'SELECT id FROM users WHERE email = ? OR phone = ?',
-      [email, fullPhone]
-    );
+    const fullPhone = normalizePhone(country_code, phone);
+    const normalizedEmail = String(email).trim().toLowerCase();
 
-    if (existing.length) {
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedEmail }, { phone: fullPhone }],
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
       req.flash('error', 'Email or phone number already registered.');
       return res.redirect('/register');
     }
 
-    /* 3️⃣ Hash password */
     const hash = await bcrypt.hash(password, 10);
 
-    /* 4️⃣ Insert user */
-    await db.query(
-      `INSERT INTO users 
-       (name, email, phone, password_hash, balance) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [name, email, fullPhone, hash, 0.00]
-    );
+    await prisma.user.create({
+      data: {
+        name: String(name).trim(),
+        email: normalizedEmail,
+        phone: fullPhone,
+        passwordHash: hash,
+        balance: 0,
+      },
+    });
 
     req.flash('success', 'Registration successful. Please login.');
-    res.redirect('/login');
-
+    return res.redirect('/login');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Something went wrong. Please try again.');
-    res.redirect('/register');
+    return res.redirect('/register');
   }
 });
 
-// Login
 router.get('/login', (req, res) => {
   res.render('login', { title: 'Login' });
 });
 
 router.post('/login', async (req, res) => {
   const { email, phone, password } = req.body;
+
   if ((!email && !phone) || !password) {
     req.flash('error', 'Please provide email or phone and password.');
     return res.redirect('/login');
   }
-  console.log(req.body);
+
   try {
-    let rows; // ✅ declare once
+    let user = null;
 
     if (phone) {
-      [rows] = await db.query(
-        'SELECT * FROM users WHERE phone = ?',
-        [phone]
-      );
+      const normalizedPhone = String(phone).trim();
+      user = await prisma.user.findFirst({
+        where: normalizedPhone.startsWith('+')
+          ? { phone: normalizedPhone }
+          : { phone: { endsWith: normalizedPhone } },
+      });
     } else {
-      [rows] = await db.query(
-        'SELECT * FROM users WHERE email = ?',
-        [email]
-      );
+      user = await prisma.user.findUnique({
+        where: { email: String(email).trim().toLowerCase() },
+      });
     }
 
-    if (!rows.length) {
+    if (!user) {
       req.flash('error', 'Invalid credentials.');
       return res.redirect('/login');
     }
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.password_hash);
+
+    const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) {
       req.flash('error', 'Invalid credentials.');
       return res.redirect('/login');
@@ -94,20 +107,19 @@ router.post('/login', async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      is_admin: !!user.is_admin,
-      balance: user.balance,
+      is_admin: Boolean(user.isAdmin),
+      balance: Number(user.balance),
     };
 
     req.flash('success', 'Welcome back!');
-    res.redirect('/');
+    return res.redirect('/');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Something went wrong.');
-    res.redirect('/login');
+    return res.redirect('/login');
   }
 });
 
-// Logout
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');

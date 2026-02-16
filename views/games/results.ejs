@@ -86,7 +86,7 @@
                             <th>#</th>
                             <th>Game</th>
                             <th>Draw Time</th>
-                            <th>Winning Number</th>
+                            <th>Winning Result</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -105,9 +105,7 @@
                                     <%= new Date(row.draw_time).toLocaleString() %>
                                 </td>
 
-                                <td class="result-number">
-                                    <%= row.winning_number %>
-                                </td>
+                                <td class="result-number"><%= row.winning_number ?? row.winning_color %></td>
 
                                 <td>
                                     <span class="badge badge-win">

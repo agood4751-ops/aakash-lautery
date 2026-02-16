@@ -83,8 +83,12 @@ app.get('/', (req, res) => {
   res.render('index', { title: 'Home' });
 });
 
-const PORT = process.env.PORT || 6000;
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 6000;
 
-app.listen(PORT, () => {
-  console.log(`Lottery app running on http://localhost:${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`Lottery app running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
